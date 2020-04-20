@@ -1,4 +1,4 @@
-import config as cfg
+import cfg
 import xml.etree.cElementTree as ET
 import os
 
