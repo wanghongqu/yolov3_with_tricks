@@ -11,8 +11,9 @@ EPOCHS = 300
 TEST_INPUT_SIZE = 544
 
 # name and path
+CHECKPOINT_PATH = './logs/checkpoints/'
 PROJECT_PATH = os.getcwd()
-DATA_PATH = os.path.join(os.getcwd(), 'data')
+DATA_PATH = os.path.join(os.getcwd(), 'data/VOC/')
 CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
            'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
            'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
