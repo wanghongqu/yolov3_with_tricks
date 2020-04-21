@@ -1,3 +1,3 @@
-from data_.data import Data
+from data.data import Data
 
 Data()

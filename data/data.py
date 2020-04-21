@@ -3,7 +3,7 @@ import os
 import config as cfg
 import random
 
-from data_.utils import load_annotations, parse_annotation, resize_to_train_size
+from data.utils import load_annotations, parse_annotation, resize_to_train_size
 
 
 class Data:
