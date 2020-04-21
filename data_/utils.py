@@ -39,7 +39,9 @@ def parse_annotation(line):
     path = line.split()[0]
     boxes = np.array([[float(v) for v in part.split(',')] for part in line.split()[1:]])
     image = np.array(Image.open(path))
-    image = random_left_right_flip(image, boxes)
+    image, boxes = random_left_right_flip(image, boxes)
+    image, boxes = random_crop(image, boxes)
+    image, boxes = random_shift(image, boxes)
     return image, boxes
 
 
@@ -53,23 +55,50 @@ def random_left_right_flip(image, boxes):
 
 
 def random_crop(image, boxes):
-    dxdy_left = np.min(boxes[..., :2], axis=-2)
-    dxdy_right = np.max(boxes[..., 2:4], axis=-2)
+    xy_min = np.min(boxes[..., :2], axis=-2)
+    xy_max = np.max(boxes[..., 2:4], axis=-2)
 
-    random_dx_left = np.random.uniform(0, dxdy_left[0])
-    random_dy_left = np.random.uniform(0, dxdy_left[1])
-    random_dx_right = np.random.uniform(image.shape[1], dxdy_right[0])
-    random_dy_right = np.random.uniform(image.shape[1], dxdy_right[1])
+    random_dx_min = np.random.uniform(0, xy_min[0])
+    random_dy_min = np.random.uniform(0, xy_min[1])
+    random_dx_max = np.random.uniform(image.shape[1], xy_max[0])
+    random_dy_max = np.random.uniform(image.shape[1], xy_max[1])
 
-    image = image[:random_dx_right, :random_dy_right, :]
-    image = image[random_dx_left:, random_dy_left:, :]
-    return image
+    image = image[:random_dy_max, :random_dx_max, :]
+    image = image[random_dy_min:, random_dx_min:, :]
+    boxes[:, [0, 2]] = boxes[:, [0, 2]] - random_dx_min
+    boxes[:, [1, 3]] = boxes[:, [1, 3]] - random_dy_min
 
-def random_shift():
-    pass
+    return image, boxes
 
 
-#
-# image = Image.open(r'C:\Users\LenovoPC\PycharmProjects\eat_tensorflow_in_20_days\aa.jpg')
-# print(image.size)
-# print(np.array(image).shape)
+def random_shift(image, boxes):
+    ih, iw = image.shape[:2]
+    dxdy_min = np.min(boxes[..., :2], axis=-2)
+    dxdy_max = image.shape[:2][::-1] - np.max(boxes[..., 2:4], axis=-2)
+    new_image = Image.new('RGB', (iw, ih), color=(128, 128, 128))
+    random_dx = np.random.uniform(-dxdy_min[0], dxdy_max[0])
+    random_dy = np.random.uniform(-dxdy_min[1], dxdy_max[1])
+
+    if (random_dx < 0):
+        image = image[:, :-random_dx, :]
+    if (random_dy < 0):
+        image = image[:-random_dy, :, :]
+    new_image.paste(image)
+    boxes[:, [0, 2]] = boxes[:, [0, 2]] + random_dx
+    boxes[:, [1, 3]] = boxes[:, [1, 3]] + random_dy
+
+    return new_image, boxes
+
+
+def resize_to_train_size(image, boxes, train_input_size):
+    scale = min(train_input_size / image.shape[:2])
+    new_h, new_w = scale * image.shape[:2]
+    image = Image.fromarray(image)
+    image = image.resize((new_w, new_h))
+    new_image = Image.new('RGB', [train_input_size, train_input_size], (128, 128, 128))
+    dx, dy = int((train_input_size - new_w) / 2.0), int((train_input_size - new_h) / 2.0)
+    new_image.paste(image, (dx, dy))
+
+    boxes[..., [0, 2]] = scale * boxes[..., [0, 2]] + dx
+    boxes[..., [1, 3]] = scale * boxes[..., [1, 3]] + dy
+    return new_image, boxes
