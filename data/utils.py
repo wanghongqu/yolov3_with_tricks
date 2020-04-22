@@ -39,13 +39,14 @@ def load_annotations(data_path, use_difficult_bbox=False, is_training=True):
     return annotations
 
 
-def parse_annotation(line):
+def parse_annotation(line, is_training=True):
     path = line.split()[0]
     boxes = np.array([[float(v) for v in part.split(',')] for part in line.split()[1:]])
     image = np.array(Image.open(path))
-    image, boxes = random_left_right_flip(image, boxes)
-    image, boxes = random_crop(image, boxes)
-    image, boxes = random_shift(image, boxes)
+    if is_training:
+        image, boxes = random_left_right_flip(image, boxes)
+        image, boxes = random_crop(image, boxes)
+        image, boxes = random_shift(image, boxes)
     return image, boxes
 
 
@@ -87,9 +88,13 @@ def random_shift(image, boxes):
     if (random_dx < 0):
         image = image[:, -random_dx:, :]
         random_dx = 0
+    if (random_dx > 0):
+        image = image[:, :-random_dx]
     if (random_dy < 0):
         image = image[-random_dy:, :, :]
         random_dy = 0
+    if (random_dy > 0):
+        image = image[:-random_dy, :, :]
     new_image.paste(Image.fromarray(image), (random_dx, random_dy))
 
     return np.array(new_image), boxes

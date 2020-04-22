@@ -15,12 +15,13 @@ class Data:
             self.annotations = load_annotations(cfg.DATA_PATH + '2007_trainval/') + \
                                load_annotations(cfg.DATA_PATH + '2012_trainval/')
         else:
-            self.annotations = load_annotations(cfg.DATA_PATH + '2007_test/',is_training)
+            self.annotations = load_annotations(cfg.DATA_PATH + '2007_test/', is_training=False)
         self.annotations = np.array(self.annotations)
         self.total_batch = int(len(self.annotations) / float(cfg.BATCH_SIZE) + 0.5)
-        print('total training data:%d '.format(len(self.annotations)))
-        print('training batch_size:', cfg.BATCH_SIZE)
-        print('total training epoch:', cfg.EPOCHS)
+        print('total  data: ', len(self.annotations))
+        print('batch_size:', cfg.BATCH_SIZE)
+        if is_training:
+            print('total training epoch:', cfg.EPOCHS)
 
     def __next__(self):
         train_input_size = random.choice(cfg.TRAIN_INPUT_SIZE)
@@ -40,7 +41,7 @@ class Data:
             image, boxes = resize_to_train_size(image, boxes, train_input_size)
 
             # mix_up
-            if random.ranom() < 0.5:
+            if random.random() < 0.5:
                 mix_idx = random.randint(0, len(self.annotations) - 1)
                 mix_img, mix_boxes = parse_annotation(self.annotations[mix_idx])
                 mix_img, mix_boxes = resize_to_train_size(mix_img, mix_boxes, train_input_size)
@@ -70,14 +71,14 @@ class Data:
         label = [np.zeros(dtype=np.float32,
                           shape=(train_output_size[i], train_output_size[i], cfg.PRED_NUM_PER_GRID, 6 + 20)) for i
                  in range(3)]
-        label[..., -1] = 1.0
-        ground_truth_count = [[np.zeros(train_output_size[i], train_output_size[i])] for i in range(3)]
+        ground_truth_count = [np.zeros(shape=(train_output_size[i], train_output_size[i])) for i in range(3)]
+        for i in range(3):
+            label[i][..., -1] = 1.0
         for box in boxes:
             xy = box[..., :4]
             cls = box[..., 4]
             w = box[..., -1]
 
-            x_, y_ = np.floor((xy[..., :2] + xy[..., 2:4]) // 2).astype(np.int32)
             wh = xy[2:] - xy[:2]
             area = wh[0] * wh[1]
             if (area <= 30):
@@ -86,13 +87,17 @@ class Data:
                 branch = 1
             else:
                 branch = 2
+
             one_hot = np.zeros(dtype=np.float32, shape=(20,))
-            one_hot[cls] = 1
+            one_hot[int(cls)] = 1
             one_hot = one_hot * (1 - cfg.DELTA) + (1 - one_hot) * cfg.DELTA / 20
-            grid_total = ground_truth_count[branch, y_, x_]
-            if (grid_total >= 3):
+            x_, y_ = (xy[..., :2] + xy[..., 2:4]) / 2 / cfg.STRIDES[branch]
+            x_ = int(x_)
+            y_ = int(y_)
+            grid_total = ground_truth_count[branch][y_, x_]
+            if (grid_total >= 2.8):
                 break;
-            ground_truth_count[branch, y_, x_] += 1
-            label[branch, y_, x_, grid_total, :] = np.concatenate([xy, [1], one_hot, [w]], axis=-1)
+            ground_truth_count[branch][y_, intx_] += 1
+            label[branch][y_, x_, grid_total, :] = np.concatenate([xy, [1], one_hot, [w]], axis=-1)
         s_label, m_label, l_label = label
         return s_label, m_label, l_label
