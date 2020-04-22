@@ -22,4 +22,7 @@ for i in range(cfg.EPOCHS):
         grads = tape.gradient(loss_val, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
         tf.summary.scalar('train_loss', loss_val, optimizer.iterations)
-
+    for image, label_sbbox, label_mbbox, label_lbbox in test_data:
+        pred_sbbox, pred_mbbox, pred_lbbox = model(image)
+        loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
+        tf.summary.scalar('test_loss', loss_val, optimizer.iterations)
