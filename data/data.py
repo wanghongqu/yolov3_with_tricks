@@ -18,10 +18,13 @@ class Data:
             self.annotations = load_annotations(cfg.DATA_PATH + '/2007_test/')
         self.annotations = np.array(self.annotations)
         self.total_batch = int(len(self.annotations) / float(cfg.BATCH_SIZE) + 0.5)
+        print('total training data:%d '.format(len(self.annotations)))
+        print('training batch_size:', cfg.BATCH_SIZE)
+        print('total training epoch:', cfg.EPOCHS)
 
     def __next__(self):
         train_input_size = random.choice(cfg.TRAIN_INPUT_SIZE)
-        train_output_size = train_input_size / cfg.STRIDES
+        train_output_size = [train_input_size // v for v in cfg.STRIDES]
 
         batch_image = np.zeros((cfg.BATCH_SIZE, train_input_size, train_input_size, 3), dtype=np.float32)
         batch_label_sbbox = np.zeros(
@@ -32,7 +35,7 @@ class Data:
             (cfg.BATCH_SIZE, train_output_size[2], train_output_size[2], cfg.PRED_NUM_PER_GRID, 6 + 20))
 
         batch_annotations = self.annotations[self.batch_num * cfg.BATCH_SIZE:(self.batch_num + 1) * cfg.BATCH_SIZE]
-        for line in batch_annotations:
+        for i, line in enumerate(batch_annotations):
             image, boxes = parse_annotation(line)
             image, boxes = resize_to_train_size(image, boxes, train_input_size)
 
@@ -40,13 +43,56 @@ class Data:
             if random.ranom() < 0.5:
                 mix_idx = random.randint(0, len(self.annotations) - 1)
                 mix_img, mix_boxes = parse_annotation(self.annotations[mix_idx])
-                pass
-
+                mix_img, mix_boxes = resize_to_train_size(mix_img, mix_boxes, train_input_size)
+                lam = np.random.beta(1.5, 1.5)
+                image = lam * image + (1 - lam) * mix_img
+                boxes = np.concatenate([boxes, lam * np.ones((len(boxes), 1), dtype=np.float32)], axis=-1)
+                mix_boxes = np.concatenate([mix_boxes, (1 - lam) * np.ones((len(mix_boxes), 1), dtype=np.float32)],
+                                           axis=-1)
+                boxes = np.concatenate([boxes, mix_boxes], axis=0)
+            else:
+                boxes = np.concatenate([boxes, np.ones((len(boxes), 1), dtype=np.float32)], axis=-1)
+            s_label, m_label, l_label = self.creat_label(boxes, train_output_size)
+            batch_image[i, :, :, :] = image
+            batch_label_sbbox[i, :, :, :, :] = s_label
+            batch_label_mbbox[i, :, :, :, :] = m_label
+            batch_label_lbbox[i, :, :, :, :] = l_label
         self.batch_num += 1
         if (self.batch_num >= self.total_batch):
             self.batch_num = 0
             np.random.shuffle(self.annatations)
-        return None
+        return batch_image, batch_label_sbbox, batch_label_mbbox, batch_label_lbbox
 
-        def __iter__(self):
-            return self
+    def __iter__(self):
+        return self
+
+    def creat_label(self, boxes, train_output_size):
+        label = [np.zeros(dtype=np.float32,
+                          shape=(train_output_size[i], train_output_size[i], cfg.PRED_NUM_PER_GRID, 6 + 20)) for i
+                 in range(3)]
+        label[..., -1] = 1.0
+        ground_truth_count = [[np.zeros(train_output_size[i], train_output_size[i])] for i in range(3)]
+        for box in boxes:
+            xy = box[..., :4]
+            cls = box[..., 4]
+            w = box[..., -1]
+
+            x_, y_ = np.floor((xy[..., :2] + xy[..., 2:4]) // 2).astype(np.int32)
+            wh = xy[2:] - xy[:2]
+            area = wh[0] * wh[1]
+            if (area <= 30):
+                branch = 0
+            elif (area <= 90):
+                branch = 1
+            else:
+                branch = 2
+            one_hot = np.zeros(dtype=np.float32, shape=(20,))
+            one_hot[cls] = 1
+            one_hot = one_hot * (1 - cfg.DELTA) + (1 - one_hot) * cfg.DELTA / 20
+            grid_total = ground_truth_count[branch, y_, x_]
+            if (grid_total >= 3):
+                break;
+            ground_truth_count[branch, y_, x_] += 1
+            label[branch, y_, x_, grid_total, :] = np.concatenate([xy, [1], one_hot, [w]], axis=-1)
+        s_label, m_label, l_label = label
+        return s_label, m_label, l_label

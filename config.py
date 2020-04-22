@@ -3,6 +3,7 @@ import os
 # yolo
 TRAIN_INPUT_SIZE = [320 + i * 32 for i in range(10)]
 PRED_NUM_PER_GRID = 3
+DELTA = 0.01
 
 # train
 BATCH_SIZE = 1024

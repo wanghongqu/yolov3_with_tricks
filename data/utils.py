@@ -5,6 +5,7 @@ import numpy as np
 import xml.etree.cElementTree as ET
 from PIL import Image, ImageEnhance
 import os
+from PIL import ImageDraw
 
 
 def load_annotations(data_path, use_difficult_bbox=False):
@@ -58,10 +59,10 @@ def random_crop(image, boxes):
     xy_min = np.min(boxes[..., :2], axis=-2)
     xy_max = np.max(boxes[..., 2:4], axis=-2)
 
-    random_dx_min = np.random.uniform(0, xy_min[0])
-    random_dy_min = np.random.uniform(0, xy_min[1])
-    random_dx_max = np.random.uniform(image.shape[1], xy_max[0])
-    random_dy_max = np.random.uniform(image.shape[1], xy_max[1])
+    random_dx_min = int(np.random.uniform(0, xy_min[0]))
+    random_dy_min = int(np.random.uniform(0, xy_min[1]))
+    random_dx_max = int(np.random.uniform(xy_max[0], image.shape[1] - 1))
+    random_dy_max = int(np.random.uniform(xy_max[1], image.shape[1] - 1))
 
     image = image[:random_dy_max, :random_dx_max, :]
     image = image[random_dy_min:, random_dx_min:, :]
@@ -76,23 +77,25 @@ def random_shift(image, boxes):
     dxdy_min = np.min(boxes[..., :2], axis=-2)
     dxdy_max = image.shape[:2][::-1] - np.max(boxes[..., 2:4], axis=-2)
     new_image = Image.new('RGB', (iw, ih), color=(128, 128, 128))
-    random_dx = np.random.uniform(-dxdy_min[0], dxdy_max[0])
-    random_dy = np.random.uniform(-dxdy_min[1], dxdy_max[1])
-
-    if (random_dx < 0):
-        image = image[:, :-random_dx, :]
-    if (random_dy < 0):
-        image = image[:-random_dy, :, :]
-    new_image.paste(image)
+    random_dx = int(np.random.uniform(-dxdy_min[0], dxdy_max[0]))
+    random_dy = int(np.random.uniform(-dxdy_min[1], dxdy_max[1]))
     boxes[:, [0, 2]] = boxes[:, [0, 2]] + random_dx
     boxes[:, [1, 3]] = boxes[:, [1, 3]] + random_dy
+    if (random_dx < 0):
+        image = image[:, -random_dx:, :]
+        random_dx = 0
+    if (random_dy < 0):
+        image = image[-random_dy:, :, :]
+        random_dy = 0
+    new_image.paste(Image.fromarray(image), (random_dx, random_dy))
 
-    return new_image, boxes
+    return np.array(new_image), boxes
 
 
 def resize_to_train_size(image, boxes, train_input_size):
-    scale = min(train_input_size / image.shape[:2])
-    new_h, new_w = scale * image.shape[:2]
+    ih, iw = image.shape[:2]
+    scale = min(train_input_size / ih, train_input_size / iw)
+    new_h, new_w = int(scale * ih), int(scale * iw)
     image = Image.fromarray(image)
     image = image.resize((new_w, new_h))
     new_image = Image.new('RGB', [train_input_size, train_input_size], (128, 128, 128))
@@ -101,4 +104,12 @@ def resize_to_train_size(image, boxes, train_input_size):
 
     boxes[..., [0, 2]] = scale * boxes[..., [0, 2]] + dx
     boxes[..., [1, 3]] = scale * boxes[..., [1, 3]] + dy
-    return new_image, boxes
+    return np.array(new_image), boxes
+
+
+def draw_image_with_boxes(image, boxes,name):
+    image = Image.fromarray(image)
+    draw = ImageDraw.Draw(image)
+    for box in boxes:
+        draw.rectangle(box[:4].astype(np.int32).tolist(), width=2, outline='yellow')
+    image.save(name)
