@@ -1,5 +1,5 @@
 import config as cfg
-from model.utils import decode, giou_loss, calc_iou
+from model.utils import decode, cal_giou, calc_iou
 import tensorflow as tf
 
 
@@ -16,11 +16,11 @@ def loss_per_scale(pred_raw, label, strides):
     input_size = pred.shape[1] * strides
 
     # 计算xy loss
-    giou = giou_loss(pred[..., :4], label[..., :4])
+    giou = cal_giou(pred[..., :4], label[..., :4])
     object_mask = label[..., 4:5]
     wh = (label[..., 2:4] - label[..., :2])
     scale = 2.0 - 1.0 * wh[..., 0:1] * wh[..., 1:2] / float(input_size) / float(input_size)  # grid,grid,3,1
-    iou_loss = scale * object_mask * giou  # grid,grid,3,1
+    iou_loss = scale * object_mask * (1 - giou)  # batch_size,grid,grid,3,1
 
     # 计算confidence loss
     ignore_msk = tf.TensorArray(dtype=tf.float32, size=1, dynamic_size=True)
@@ -32,7 +32,7 @@ def loss_per_scale(pred_raw, label, strides):
     ignore_msk = ignore_msk.stack()
     conf_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4], pred_raw[..., 4]) + (
             1.0 - object_mask) * ignore_msk * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4], pred_raw[..., 4])
-    # grid,grid,3,1
+    # batch_size,grid,grid,3,1
 
     # class prob loss
     class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:],

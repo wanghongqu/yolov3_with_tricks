@@ -18,6 +18,5 @@ for i in range(cfg.EPOCHS):
         with tf.GradientTape() as tape:
             pred_sbbox, pred_mbbox, pred_lbbox = model(tf.convert_to_tensor(image, dtype=tf.float32))
             loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
-            print(pred_sbbox.shape, pred_mbbox.shape, pred_lbbox.shape, label_sbbox.shape, label_mbbox.shape,
-                  label_lbbox.shape)
+
         pass

@@ -66,23 +66,23 @@ def get_lr(step, step_per_epoch):
             1 + np.math.cos((step - warmup_steps) / (train_steps - warmup_steps) * np.pi))
 
 
-def giou_loss(pred, label):
+def cal_giou(pred, label):
     # 计算 pred面积
     pred_wh = pred[..., 2:] - pred[..., :2]
-    pred_area = pred_wh[..., 0:1] * pred_wh[..., 1:2]
+    pred_area = pred_wh[..., 0:1] * pred_wh[..., 1:2]  # batch_size,grid,grid,3,1
     # 计算 label面积
-    label_wh = label[..., 2:] - label[..., :2]  # grid,grid,3,2
-    label_area = label_wh[..., 0:1] * label_wh[..., 1:2]  # grid,grid,3,1
+    label_wh = label[..., 2:4] - label[..., 0:2]  # batch_size,grid,grid,3,2
+    label_area = label_wh[..., 0:1] * label_wh[..., 1:2]  # batch_size,grid,grid,3,1
     # 计算交集
     intersect_minxy = tf.maximum(pred[..., :2], label[..., :2])
-    intersect_maxxy = tf.minimum(pred[..., 2:], label[..., 2:])
-    intersect_wh = tf.maximum(intersect_maxxy - intersect_minxy, 0)
+    intersect_maxxy = tf.minimum(pred[..., 2:4], label[..., 2:4])
+    intersect_wh = tf.maximum(intersect_maxxy - intersect_minxy, 0.0)
     intersect_area = intersect_wh[..., 0:1] * intersect_wh[..., 1:2]
-    iou = intersect_area / (label_area + pred_area - intersect_area)
+    iou = intersect_area / (label_area + pred_area - intersect_area) # batch_size,grid,grid,3,1
     # 外部闭集
     outer_minxy = tf.minimum(pred[..., :2], label[..., :2])
     outer_maxxy = tf.maximum(pred[..., 2:], label[..., 2:])
-    outer_wh = outer_maxxy - outer_minxy
+    outer_wh = tf.maximum(outer_maxxy - outer_minxy,0.0)
     out_area = outer_wh[..., 0] * outer_wh[..., 1]
 
     giou = 1.0 * (iou - (out_area - label_area - pred_area + intersect_area) / out_area)  # grid,grid,3,1
