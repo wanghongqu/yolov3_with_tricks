@@ -1,7 +1,10 @@
+import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.layers import *
 import config as cfg
+import tensorflow as tf
+
 
 def separable_conv(input, output_c, strides=1, kernel_size=3):
     x = DepthwiseConv2D(kernel_size=kernel_size, strides=strides, padding='same',
@@ -53,12 +56,53 @@ def decode(pred, strides):
     ret[..., 5:] = pred_class_prob
     return ret
 
-# def get_lr(step):
-#     if(step<cfg.WARM_UP_PERIOD*)
-#     pass
 
-'''
-pred = self.__global_step < warmup_steps,
-true_fn = lambda: self.__global_step / warmup_steps * self.__learn_rate_init,
-false_fn = lambda: self.__learn_rate_end + 0.5 * (self.__learn_rate_init - self.__learn_rate_end) *
-(1 + tf.cos((self.__global_step - warmup_steps) / (train_steps - warmup_steps) * np.pi))'''
+def get_lr(step, step_per_epoch):
+    warmup_steps = cfg.WARM_UP_EPOCHS * step_per_epoch
+    train_steps = cfg.EPOCHS * step_per_epoch
+    if (step < warmup_steps):
+        return step / warmup_steps * cfg.LEARN_RATE_INIT
+    return cfg.LEARN_RATE_END + 0.5 * (cfg.LEARN_RATE_INIT - cfg.LEARN_RATE_END) * (
+            1 + np.math.cos((step - warmup_steps) / (train_steps - warmup_steps) * np.pi))
+
+
+def giou_loss(pred, label):
+    # 计算 pred面积
+    pred_wh = pred[..., 2:] - pred[..., :2]
+    pred_area = pred_wh[..., 0:1] * pred_wh[..., 1:2]
+    # 计算 label面积
+    label_wh = label[..., 2:] - label[..., :2]  # grid,grid,3,2
+    label_area = label_wh[..., 0:1] * label_wh[..., 1:2]  # grid,grid,3,1
+    # 计算交集
+    intersect_minxy = tf.maximum(pred[..., :2], label[..., :2])
+    intersect_maxxy = tf.minimum(pred[..., 2:], label[..., 2:])
+    intersect_wh = tf.maximum(intersect_maxxy - intersect_minxy, 0)
+    intersect_area = intersect_wh[..., 0:1] * intersect_wh[..., 1:2]
+    iou = intersect_area / (label_area + pred_area - intersect_area)
+    # 外部闭集
+    outer_minxy = tf.minimum(pred[..., :2], label[..., :2])
+    outer_maxxy = tf.maximum(pred[..., 2:], label[..., 2:])
+    outer_wh = outer_maxxy - outer_minxy
+    out_area = outer_wh[..., 0] * outer_wh[..., 1]
+
+    giou = 1.0 * (iou - (out_area - label_area - pred_area + intersect_area) / out_area)  # grid,grid,3,1
+    return giou
+
+
+def calc_iou(pred, object_boxes):
+    expand_pred = tf.expand_dims(pred, axis=-2)  # batch_size,grid,grid,3,1,4
+    # pred area
+    pred_wh = expand_pred[..., 2:4] - expand_pred[..., :2]
+    pred_area = pred_wh[..., 0] * pred_wh[..., 1]  # shape:[grid,grid,3,1]
+
+    # object area
+    obj_wh = object_boxes[..., 2:4] - object_boxes[..., :2]
+    obj_area = obj_wh[..., 0] * pred_wh[..., 0]  # shape:[N]
+
+    # intersect area
+
+    intersect_minxy = tf.maximum(expand_pred[..., :2], object_boxes[..., :2])  # shape:grid,grid,3,N,2
+    intersect_maxxy = tf.minimum(expand_pred[..., 2:4], object_boxes[..., 2:4])  # shape:grid,grid,3,N,2
+    intersect_wh = tf.maximum(intersect_maxxy - intersect_minxy, 0.0)
+    intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
+    return intersect_area / (obj_area + pred_area - intersect_area)

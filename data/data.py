@@ -36,6 +36,7 @@ class Data:
             (cfg.BATCH_SIZE, train_output_size[2], train_output_size[2], cfg.PRED_NUM_PER_GRID, 6 + 20))
 
         batch_annotations = self.annotations[self.batch_num * cfg.BATCH_SIZE:(self.batch_num + 1) * cfg.BATCH_SIZE]
+
         for i, line in enumerate(batch_annotations):
             image, boxes = parse_annotation(line)
             image, boxes = resize_to_train_size(image, boxes, train_input_size)
@@ -61,11 +62,14 @@ class Data:
         self.batch_num += 1
         if (self.batch_num >= self.total_batch):
             self.batch_num = 0
-            np.random.shuffle(self.annatations)
+            np.random.shuffle(self.annotations)
         return batch_image, batch_label_sbbox, batch_label_mbbox, batch_label_lbbox
 
     def __iter__(self):
         return self
+
+    def get_size(self):
+        return len(self.annotations)
 
     def creat_label(self, boxes, train_output_size):
         label = [np.zeros(dtype=np.float32,
@@ -80,10 +84,10 @@ class Data:
             w = box[..., -1]
 
             wh = xy[2:] - xy[:2]
-            area = wh[0] * wh[1]
-            if (area <= 30):
+            area = np.sqrt(wh[0] * wh[1])
+            if (area < 30):
                 branch = 0
-            elif (area <= 90):
+            elif (area < 90 and area >= 30):
                 branch = 1
             else:
                 branch = 2
@@ -91,13 +95,13 @@ class Data:
             one_hot = np.zeros(dtype=np.float32, shape=(20,))
             one_hot[int(cls)] = 1
             one_hot = one_hot * (1 - cfg.DELTA) + (1 - one_hot) * cfg.DELTA / 20
-            x_, y_ = (xy[..., :2] + xy[..., 2:4]) / 2 / cfg.STRIDES[branch]
-            x_ = int(x_)
-            y_ = int(y_)
+            x_, y_ = (xy[..., :2] + xy[..., 2:4]) / 2
+            x_ = (x_ / cfg.STRIDES[branch])
+            y_ = int(y_ / cfg.STRIDES[branch])
             grid_total = ground_truth_count[branch][y_, x_]
             if (grid_total >= 2.8):
-                break;
-            ground_truth_count[branch][y_, intx_] += 1
-            label[branch][y_, x_, grid_total, :] = np.concatenate([xy, [1], one_hot, [w]], axis=-1)
+                continue;
+            ground_truth_count[branch][y_, x_] += 1
+            label[branch][y_, x_, int(grid_total), :] = np.concatenate([xy, [1], one_hot, [w]], axis=-1)
         s_label, m_label, l_label = label
         return s_label, m_label, l_label

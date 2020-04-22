@@ -55,23 +55,27 @@ def random_left_right_flip(image, boxes):
         image[...] = image[:, ::-1, :]
         ih, iw = image.shape[0], image.shape[1]
         boxes[:, [0, 2]] = boxes[:, [2, 0]]
-        boxes[:, [0, 2]] = iw - boxes[:, [0, 2]]
+        boxes[:, [0, 2]] = iw - 1 - boxes[:, [0, 2]]
     return image, boxes
 
 
 def random_crop(image, boxes):
-    xy_min = np.min(boxes[..., :2], axis=-2)
-    xy_max = np.max(boxes[..., 2:4], axis=-2)
+    assert (np.max(boxes[:, 2]) <= image.shape[1])
+    assert (np.max(boxes[:, 3]) <= image.shape[0])
+    xy_min = np.min(boxes[:, :2], axis=-2)
+    xy_max = np.max(boxes[:, 2:4], axis=-2)
 
     random_dx_min = int(np.random.uniform(0, xy_min[0]))
     random_dy_min = int(np.random.uniform(0, xy_min[1]))
     random_dx_max = int(np.random.uniform(xy_max[0], image.shape[1] - 1))
-    random_dy_max = int(np.random.uniform(xy_max[1], image.shape[1] - 1))
+    random_dy_max = int(np.random.uniform(xy_max[1], image.shape[0] - 1))
 
-    image = image[:random_dy_max, :random_dx_max, :]
-    image = image[random_dy_min:, random_dx_min:, :]
+    image = image[random_dy_min:random_dy_max + 1, random_dx_min:random_dx_max + 1, :]
     boxes[:, [0, 2]] = boxes[:, [0, 2]] - random_dx_min
     boxes[:, [1, 3]] = boxes[:, [1, 3]] - random_dy_min
+    # print("box_maxxy:",boxes[:,2:4])
+    # print("xy_min,xy_max",xy_min,xy_max)
+    # print("random_data:",random_dx_min,random_dy_min,random_dx_max,random_dy_max)
 
     return image, boxes
 
@@ -79,7 +83,7 @@ def random_crop(image, boxes):
 def random_shift(image, boxes):
     ih, iw = image.shape[:2]
     dxdy_min = np.min(boxes[..., :2], axis=-2)
-    dxdy_max = image.shape[:2][::-1] - np.max(boxes[..., 2:4], axis=-2)
+    dxdy_max = image.shape[:2][::-1] - np.max(boxes[..., 2:4], axis=-2) - 1
     new_image = Image.new('RGB', (iw, ih), color=(128, 128, 128))
     random_dx = int(np.random.uniform(-dxdy_min[0], dxdy_max[0]))
     random_dy = int(np.random.uniform(-dxdy_min[1], dxdy_max[1]))
