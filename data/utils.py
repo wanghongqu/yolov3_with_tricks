@@ -8,8 +8,11 @@ import os
 from PIL import ImageDraw
 
 
-def load_annotations(data_path, use_difficult_bbox=False):
-    img_inds_file = os.path.join(data_path, 'ImageSets', 'Main', 'trainval.txt')
+def load_annotations(data_path, use_difficult_bbox=False, is_training=True):
+    if is_training:
+        img_inds_file = os.path.join(data_path, 'ImageSets', 'Main', 'trainval.txt')
+    else:
+        img_inds_file = os.path.join(data_path, 'ImageSets', 'Main', 'test.txt')
     with open(img_inds_file, 'r') as f:
         txt = f.readlines()
         image_inds = [line.strip() for line in txt]
@@ -107,7 +110,7 @@ def resize_to_train_size(image, boxes, train_input_size):
     return np.array(new_image), boxes
 
 
-def draw_image_with_boxes(image, boxes,name):
+def draw_image_with_boxes(image, boxes, name):
     image = Image.fromarray(image)
     draw = ImageDraw.Draw(image)
     for box in boxes:

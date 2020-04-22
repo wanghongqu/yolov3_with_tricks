@@ -17,7 +17,7 @@ def get_backbone():
     ])
 
 
-def get_yolo():
+def get_yolo_model():
     backbone = get_backbone()
     featuremap_small, featuremap_medium, featuremap_large = backbone.output
 

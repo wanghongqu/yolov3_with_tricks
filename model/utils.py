@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.layers import *
-
+import config as cfg
 
 def separable_conv(input, output_c, strides=1, kernel_size=3):
     x = DepthwiseConv2D(kernel_size=kernel_size, strides=strides, padding='same',
@@ -52,3 +52,13 @@ def decode(pred, strides):
     ret[..., 4] = pred_conf
     ret[..., 5:] = pred_class_prob
     return ret
+
+# def get_lr(step):
+#     if(step<cfg.WARM_UP_PERIOD*)
+#     pass
+
+'''
+pred = self.__global_step < warmup_steps,
+true_fn = lambda: self.__global_step / warmup_steps * self.__learn_rate_init,
+false_fn = lambda: self.__learn_rate_end + 0.5 * (self.__learn_rate_init - self.__learn_rate_end) *
+(1 + tf.cos((self.__global_step - warmup_steps) / (train_steps - warmup_steps) * np.pi))'''

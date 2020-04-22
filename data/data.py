@@ -12,10 +12,10 @@ class Data:
         os.system('mkdir -p ' + cfg.CHECKPOINT_PATH)
         os.system('mkdir -p ' + cfg.LOG_PATH)
         if is_training:
-            self.annotations = load_annotations(cfg.DATA_PATH + '/2007_trainval/') + \
-                               load_annotations(cfg.DATA_PATH + '/2012_trainval/')
+            self.annotations = load_annotations(cfg.DATA_PATH + '2007_trainval/') + \
+                               load_annotations(cfg.DATA_PATH + '2012_trainval/')
         else:
-            self.annotations = load_annotations(cfg.DATA_PATH + '/2007_test/')
+            self.annotations = load_annotations(cfg.DATA_PATH + '2007_test/',is_training)
         self.annotations = np.array(self.annotations)
         self.total_batch = int(len(self.annotations) / float(cfg.BATCH_SIZE) + 0.5)
         print('total training data:%d '.format(len(self.annotations)))
