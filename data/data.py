@@ -2,7 +2,7 @@ import numpy as np
 import os
 import config as cfg
 import random
-
+import tensorflow as tf
 from data.utils import load_annotations, parse_annotation, resize_to_train_size
 
 
@@ -18,14 +18,19 @@ class Data:
             self.annotations = load_annotations(cfg.DATA_PATH + '2007_test/', is_training=False)
         self.annotations = np.array(self.annotations)
         self.total_batch = int(len(self.annotations) / float(cfg.BATCH_SIZE) + 0.5)
+        self.is_training = is_training
         print('total  data: ', len(self.annotations))
         print('batch_size:', cfg.BATCH_SIZE)
         if is_training:
             print('total training epoch:', cfg.EPOCHS)
 
     def __next__(self):
-        train_input_size = random.choice(cfg.TRAIN_INPUT_SIZE)
-        train_output_size = [train_input_size // v for v in cfg.STRIDES]
+        if self.is_training:
+            train_input_size = random.choice(cfg.TRAIN_INPUT_SIZE)
+            train_output_size = [train_input_size // v for v in cfg.STRIDES]
+        else:
+            train_input_size = cfg.TEST_INPUT_SIZE
+            train_output_size = [train_input_size // v for v in cfg.STRIDES]
 
         batch_image = np.zeros((cfg.BATCH_SIZE, train_input_size, train_input_size, 3), dtype=np.float32)
         batch_label_sbbox = np.zeros(
@@ -38,11 +43,11 @@ class Data:
         batch_annotations = self.annotations[self.batch_num * cfg.BATCH_SIZE:(self.batch_num + 1) * cfg.BATCH_SIZE]
 
         for i, line in enumerate(batch_annotations):
-            image, boxes = parse_annotation(line)
+            image, boxes = parse_annotation(line, self.is_training)
             image, boxes = resize_to_train_size(image, boxes, train_input_size)
 
             # mix_up
-            if random.random() < 0.5:
+            if random.random() < 0.5 and self.is_training:
                 mix_idx = random.randint(0, len(self.annotations) - 1)
                 mix_img, mix_boxes = parse_annotation(self.annotations[mix_idx])
                 mix_img, mix_boxes = resize_to_train_size(mix_img, mix_boxes, train_input_size)
@@ -63,7 +68,9 @@ class Data:
         if (self.batch_num >= self.total_batch):
             self.batch_num = 0
             np.random.shuffle(self.annotations)
-        return batch_image, batch_label_sbbox, batch_label_mbbox, batch_label_lbbox
+        return tf.convert_to_tensor(batch_image, dtype=tf.float32), tf.convert_to_tensor(batch_label_sbbox,
+                                                                                         dtype=tf.float32), tf.convert_to_tensor(
+            batch_label_mbbox, dtype=tf.float32), tf.convert_to_tensor(batch_label_lbbox, dtype=tf.float32)
 
     def __iter__(self):
         return self

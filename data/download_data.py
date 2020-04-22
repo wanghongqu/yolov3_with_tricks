@@ -1,10 +1,10 @@
 import os
 
 os.system(
-    "wget https://direct.functionweb.tk/?/Pascal%20VOC/2012/VOCtrainval_11-May-2012.tar -O VOCtrainval_11-May-2012.tar")
+    "wget https://test.functionweb.tk/data/Pascal%20VOC/2012/VOCtrainval_11-May-2012.tar -O VOCtrainval_11-May-2012.tar")
 os.system(
-    "wget https://direct.functionweb.tk/?/Pascal%20VOC/2007/VOCtrainval_06-Nov-2007.tar -O VOCtrainval_06-Nov-2007.tar")
-os.system("wget https://direct.functionweb.tk/?/Pascal%20VOC/2007/VOCtest_06-Nov-2007.tar -O VOCtest_06-Nov-2007.tar")
+    "wget https://test.functionweb.tk/data/Pascal%20VOC/2007/VOCtrainval_06-Nov-2007.tar -O VOCtrainval_06-Nov-2007.tar")
+os.system("wget https://test.functionweb.tk/data/Pascal%20VOC/2007/VOCtest_06-Nov-2007.tar -O VOCtest_06-Nov-2007.tar")
 
 os.system("mkdir -p data/VOC/2007_test/")
 os.system("mkdir -p data/VOC/2007_trainval/")

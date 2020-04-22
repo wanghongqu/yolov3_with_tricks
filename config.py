@@ -15,7 +15,7 @@ LEARN_RATE_END = 1e-6
 IGNORE_THRESH = 0.5
 
 # test
-TEST_INPUT_SIZE = 32
+TEST_INPUT_SIZE = 416
 
 # name and path
 CHECKPOINT_PATH = './logs/checkpoints/'
