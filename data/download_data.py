@@ -6,7 +6,7 @@ os.system(
     "wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar -O VOCtrainval_06-Nov-2007.tar")
 os.system("wget http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar -O VOCtest_06-Nov-2007.tar")
 
-os.system("wget http://pjreddie.com/media/files/VOCtest_06-Nov-2007.tar -O VOCtest_06-Nov-2007.tar")
+# os.system("wget http://pjreddie.com/media/files/VOCtest_06-Nov-2007.tar -O VOCtest_06-Nov-2007.tar")
 
 os.system("mkdir -p data/VOC/2007_test/")
 os.system("mkdir -p data/VOC/2007_trainval/")
