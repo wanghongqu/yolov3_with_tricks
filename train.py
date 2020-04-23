@@ -36,5 +36,6 @@ for i in range(start, cfg.EPOCHS):
         loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
         test_loss.assign_add(loss_val)
     tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
+    tf.summary.scalar('lr', optimizer.lr, step=optimizer.iterations)
     test_loss.assign(tf.constant(0, dtype=tf.float32))
     manager.save()
