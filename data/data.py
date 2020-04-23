@@ -49,7 +49,7 @@ class Data:
             image, boxes = resize_to_train_size(image, boxes, train_input_size)
 
             # mix_up
-            if random.random() < 0.5 and self.is_training:
+            if random.random() < 0.5:
                 mix_idx = random.randint(0, len(self.annotations) - 1)
                 mix_img, mix_boxes = parse_annotation(self.annotations[mix_idx])
                 mix_img, mix_boxes = resize_to_train_size(mix_img, mix_boxes, train_input_size)

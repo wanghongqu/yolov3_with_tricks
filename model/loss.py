@@ -11,9 +11,14 @@ def yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, labe
     return loss_val
 
 
+def focal(target, actual, alpha=1, gamma=2):
+    focal = alpha * tf.pow(tf.abs(target - actual), gamma)
+    return focal
+
+
 def loss_per_scale(pred_raw, label, strides):
-    pred = decode(tf.identity(pred_raw), strides)
-    pred_raw = tf.reshape(pred, shape=pred.shape)
+    pred = decode(pred_raw, strides)
+    pred_raw = tf.reshape(pred_raw, shape=pred.shape)
 
     input_size = pred.shape[1] * strides
 
@@ -32,19 +37,21 @@ def loss_per_scale(pred_raw, label, strides):
             object_boxes = tf.zeros(shape=[1, 4], dtype=tf.float32)
         iou = calc_iou(pred[i][..., :4], object_boxes)  # grid,grid,3,N
         max_iou = tf.reduce_max(iou, axis=-1, keepdims=True)  # grid,grid,3,1
-        ignore_msk = ignore_msk.write(i, tf.where(max_iou < cfg.IGNORE_THRESH, tf.ones_like(max_iou),
-                                                  tf.zeros_like(max_iou)))
+        ignore_msk = ignore_msk.write(i, tf.cast(max_iou < cfg.IGNORE_THRESH, dtype=tf.float32))
     ignore_msk = ignore_msk.stack()
+    conf_focal = focal(object_mask, pred[..., 4:5])
 
-    conf_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5], pred_raw[..., 4:5]) + (
+    conf_loss = conf_focal * (
+            object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5], pred_raw[..., 4:5]) + (
             1.0 - object_mask) * ignore_msk * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5],
-                                                                                      pred_raw[..., 4:5])
+                                                                                      pred_raw[..., 4:5]))
     # batch_size,grid,grid,3,1
 
     # class prob loss
     class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:])
     # grid,grid,20
     loss = tf.concat([iou_loss, conf_loss, class_prob_loss], axis=-1) * label[..., -1:]
-    tf.print(loss.shape)
+    # tf.print("iou_loss:", tf.reduce_sum(iou_loss), "conf_loss:", tf.reduce_sum(conf_loss), "class_prob_loss:",
+            #  tf.reduce_sum(class_prob_loss))
     loss = tf.reduce_mean(tf.reduce_sum(loss, axis=[1, 2, 3, 4]))
     return loss
