@@ -20,12 +20,14 @@ def loss_per_scale(pred_raw, label, strides):
     object_mask = label[..., 4:5]
     wh = (label[..., 2:4] - label[..., :2])
     scale = 2.0 - 1.0 * wh[..., 0:1] * wh[..., 1:2] / float(input_size) / float(input_size)  # grid,grid,3,1
-    iou_loss = scale * object_mask * (1 - giou)  # batch_size,grid,grid,3,1
+    iou_loss = scale * object_mask * (1.0 - giou)  # batch_size,grid,grid,3,1
 
     # 计算confidence loss
     ignore_msk = tf.TensorArray(dtype=tf.float32, size=1, dynamic_size=True)
     for i in range(pred.shape[0]):
         object_boxes = tf.boolean_mask(label[i][..., :4], tf.cast(label[i][..., 4], dtype=tf.bool))
+        if (object_mask.shape[0] == 0):
+            object_boxes = tf.zeros(shape=[1, 4], dtype=tf.float32)
         iou = calc_iou(pred[i][..., :4], object_boxes)  # grid,grid,3,N
         max_iou = tf.reduce_max(iou, axis=-1, keepdims=True)  # grid,grid,3,1
         ignore_msk.write(tf.where(max_iou < cfg.IGNORE_THRESH, tf.ones_like(max_iou), tf.zeros_like(max_iou)))

@@ -4,6 +4,7 @@ from data.data import Data
 from model.loss import yolo_loss
 from model.net import get_yolo_model
 from model.utils import get_lr
+from tensorflow.train import Checkpoint, CheckpointManager
 
 model = get_yolo_model()
 optimizer = tf.optimizers.Adam()
@@ -11,8 +12,16 @@ train_data = Data()
 test_data = Data(is_training=False)
 writer = tf.summary.create_file_writer(cfg.LOG_PATH)
 writer.set_as_default()
-test_loss = tf.Variable(initial_value=0)
-for i in range(cfg.EPOCHS):
+test_loss = tf.Variable(initial_value=0, dtype=tf.float32)
+start = tf.Variable(initial_value=0, dtype=tf.float32)
+check_point = Checkpoint(m=model, optim=optimizer, s=start)
+manager = CheckpointManager(check_point, cfg.CHECKPOINT_PATH, 3)
+
+if (cfg.RESTORE_TRAINING):
+    check_point.restore(tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH))
+
+for i in range(start, cfg.EPOCHS):
+    print('epoch:', i)
     for image, label_sbbox, label_mbbox, label_lbbox in train_data:
         lr = get_lr(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)
         optimizer.lr = lr
@@ -25,4 +34,7 @@ for i in range(cfg.EPOCHS):
     for image, label_sbbox, label_mbbox, label_lbbox in test_data:
         pred_sbbox, pred_mbbox, pred_lbbox = model(image)
         loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
-        tf.summary.scalar('test_loss', loss_val, optimizer.iterations)
+        test_loss.assign_add(loss_val)
+    tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
+    test_loss.assign(tf.constant(0, dtype=tf.float32))
+    manager.save()

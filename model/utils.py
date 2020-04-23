@@ -43,7 +43,7 @@ def decode(pred, strides):
 
     y = tf.tile(tf.range(grid_size)[:, tf.newaxis], [1, grid_size])[..., tf.newaxis]
     x = tf.tile(tf.range(grid_size)[tf.newaxis, :], [grid_size, 1])[..., tf.newaxis]
-    grid = tf.concat([x, y], axis=-1)[tf.newaxis, :, :, tf.newaxis, 2]
+    grid = tf.concat([x, y], axis=-1)[tf.newaxis, :, :, tf.newaxis, :]
     grid = tf.cast(grid, dtype=tf.float32)
 
     pred_xminymin = strides * (grid + 0.5 - pred_dx1dy1)
@@ -68,7 +68,7 @@ def get_lr(step, step_per_epoch):
 
 def cal_giou(pred, label):
     # 计算 pred面积
-    pred_wh = pred[..., 2:] - pred[..., :2]
+    pred_wh = pred[..., 2:4] - pred[..., :2]
     pred_area = pred_wh[..., 0:1] * pred_wh[..., 1:2]  # batch_size,grid,grid,3,1
     # 计算 label面积
     label_wh = label[..., 2:4] - label[..., 0:2]  # batch_size,grid,grid,3,2
@@ -81,7 +81,7 @@ def cal_giou(pred, label):
     iou = intersect_area / (label_area + pred_area - intersect_area) # batch_size,grid,grid,3,1
     # 外部闭集
     outer_minxy = tf.minimum(pred[..., :2], label[..., :2])
-    outer_maxxy = tf.maximum(pred[..., 2:], label[..., 2:])
+    outer_maxxy = tf.maximum(pred[..., 2:4], label[..., 2:4])
     outer_wh = tf.maximum(outer_maxxy - outer_minxy,0.0)
     out_area = outer_wh[..., 0] * outer_wh[..., 1]
 

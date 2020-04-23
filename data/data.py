@@ -9,8 +9,10 @@ from data.utils import load_annotations, parse_annotation, resize_to_train_size
 class Data:
     def __init__(self, is_training=True):
         self.batch_num = 0
-        os.system('mkdir -p ' + cfg.CHECKPOINT_PATH)
-        os.system('mkdir -p ' + cfg.LOG_PATH)
+        if not os.path.exists(cfg.CHECKPOINT_PATH):
+            os.system('mkdir -p ' + cfg.CHECKPOINT_PATH)
+        if not os.path.exists(cfg.LOG_PATH):
+            os.system('mkdir -p ' + cfg.LOG_PATH)
         if is_training:
             self.annotations = load_annotations(cfg.DATA_PATH + '2007_trainval/') + \
                                load_annotations(cfg.DATA_PATH + '2012_trainval/')
