@@ -38,7 +38,7 @@ def decode(pred, strides):
     pred_dx2dy2 = tf.exp(pred_raw_dx2dy2)
     pred_raw_conf = pred[..., 4:5]
     pred_conf = tf.sigmoid(pred_raw_conf)
-    pred_raw_class_prob = pred[5:]
+    pred_raw_class_prob = pred[...,5:]
     pred_class_prob = tf.sigmoid(pred_raw_class_prob)
 
     y = tf.tile(tf.range(grid_size)[:, tf.newaxis], [1, grid_size])[..., tf.newaxis]
@@ -49,11 +49,7 @@ def decode(pred, strides):
     pred_xminymin = strides * (grid + 0.5 - pred_dx1dy1)
     pred_xmaxymax = strides * (grid + 0.5 + pred_dx2dy2)
 
-    ret = tf.zeros_like(pred)
-    ret[..., :2] = pred_xminymin
-    ret[..., 2:4] = pred_xmaxymax
-    ret[..., 4] = pred_conf
-    ret[..., 5:] = pred_class_prob
+    ret = tf.concat([pred_xminymin,pred_xmaxymax,pred_conf,pred_class_prob],axis=-1)
     return ret
 
 
@@ -83,7 +79,7 @@ def cal_giou(pred, label):
     outer_minxy = tf.minimum(pred[..., :2], label[..., :2])
     outer_maxxy = tf.maximum(pred[..., 2:4], label[..., 2:4])
     outer_wh = tf.maximum(outer_maxxy - outer_minxy,0.0)
-    out_area = outer_wh[..., 0] * outer_wh[..., 1]
+    out_area = outer_wh[..., 0:1] * outer_wh[..., 1:2]
 
     giou = 1.0 * (iou - (out_area - label_area - pred_area + intersect_area) / out_area)  # grid,grid,3,1
     return giou

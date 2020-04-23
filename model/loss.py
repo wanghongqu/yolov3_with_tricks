@@ -12,7 +12,9 @@ def yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, labe
 
 
 def loss_per_scale(pred_raw, label, strides):
-    pred = decode(pred_raw, strides)
+    pred = decode(tf.identity(pred_raw), strides)
+    pred_raw = tf.reshape(pred, shape=pred.shape)
+
     input_size = pred.shape[1] * strides
 
     # 计算xy loss
@@ -30,15 +32,17 @@ def loss_per_scale(pred_raw, label, strides):
             object_boxes = tf.zeros(shape=[1, 4], dtype=tf.float32)
         iou = calc_iou(pred[i][..., :4], object_boxes)  # grid,grid,3,N
         max_iou = tf.reduce_max(iou, axis=-1, keepdims=True)  # grid,grid,3,1
-        ignore_msk.write(tf.where(max_iou < cfg.IGNORE_THRESH, tf.ones_like(max_iou), tf.zeros_like(max_iou)))
+        ignore_msk = ignore_msk.write(i, tf.where(max_iou < cfg.IGNORE_THRESH, tf.ones_like(max_iou),
+                                                  tf.zeros_like(max_iou)))
     ignore_msk = ignore_msk.stack()
-    conf_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4], pred_raw[..., 4]) + (
-            1.0 - object_mask) * ignore_msk * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4], pred_raw[..., 4])
+
+    conf_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5], pred_raw[..., 4:5]) + (
+            1.0 - object_mask) * ignore_msk * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5],
+                                                                                              pred_raw[..., 4:5])
     # batch_size,grid,grid,3,1
 
     # class prob loss
-    class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:],
-                                                                            logits=True)
+    class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:])
     # grid,grid,20
     loss = tf.concat([iou_loss, conf_loss, class_prob_loss], axis=-1) * label[..., -1:]
     loss = tf.reduce_mean(tf.reduce_sum(loss, axis=[1, 2, 3, 4]))

@@ -62,7 +62,7 @@ class Data:
             else:
                 boxes = np.concatenate([boxes, np.ones((len(boxes), 1), dtype=np.float32)], axis=-1)
             s_label, m_label, l_label = self.creat_label(boxes, train_output_size)
-            batch_image[i, :, :, :] = image
+            batch_image[i, :, :, :] = image.astype(np.float32)/255.0
             batch_label_sbbox[i, :, :, :, :] = s_label
             batch_label_mbbox[i, :, :, :, :] = m_label
             batch_label_lbbox[i, :, :, :, :] = l_label
@@ -71,8 +71,7 @@ class Data:
             self.batch_num = 0
             np.random.shuffle(self.annotations)
             raise StopIteration()
-        return tf.convert_to_tensor(batch_image, dtype=tf.float32), tf.convert_to_tensor(batch_label_sbbox,
-                                                                                         dtype=tf.float32), tf.convert_to_tensor(
+        return tf.convert_to_tensor(batch_image, dtype=tf.float32), tf.convert_to_tensor(batch_label_sbbox,dtype=tf.float32), tf.convert_to_tensor(
             batch_label_mbbox, dtype=tf.float32), tf.convert_to_tensor(batch_label_lbbox, dtype=tf.float32)
 
     def __iter__(self):
@@ -106,7 +105,7 @@ class Data:
             one_hot[int(cls)] = 1
             one_hot = one_hot * (1 - cfg.DELTA) + (1 - one_hot) * cfg.DELTA / 20
             x_, y_ = (xy[..., :2] + xy[..., 2:4]) / 2
-            x_ = (x_ / cfg.STRIDES[branch])
+            x_ = int(x_ / cfg.STRIDES[branch])
             y_ = int(y_ / cfg.STRIDES[branch])
             grid_total = ground_truth_count[branch][y_, x_]
             if (grid_total >= 2.8):

@@ -13,14 +13,14 @@ test_data = Data(is_training=False)
 writer = tf.summary.create_file_writer(cfg.LOG_PATH)
 writer.set_as_default()
 test_loss = tf.Variable(initial_value=0, dtype=tf.float32)
-start = tf.Variable(initial_value=0, dtype=tf.float32)
+start = tf.Variable(initial_value=0)
 check_point = Checkpoint(m=model, optim=optimizer, s=start)
 manager = CheckpointManager(check_point, cfg.CHECKPOINT_PATH, 3)
 
 if (cfg.RESTORE_TRAINING):
     check_point.restore(tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH))
 
-for i in range(start, cfg.EPOCHS):
+for i in range(start.numpy(), cfg.EPOCHS):
     print('epoch:', i)
     for image, label_sbbox, label_mbbox, label_lbbox in train_data:
         lr = get_lr(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)

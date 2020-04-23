@@ -42,7 +42,7 @@ def load_annotations(data_path, use_difficult_bbox=False, is_training=True):
 def parse_annotation(line, is_training=True):
     path = line.split()[0]
     boxes = np.array([[float(v) for v in part.split(',')] for part in line.split()[1:]])
-    image = np.array(Image.open(path), dtype=np.float32)
+    image = np.array(Image.open(path))
     if is_training:
         image, boxes = random_left_right_flip(image, boxes)
         image, boxes = random_crop(image, boxes)

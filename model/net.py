@@ -61,4 +61,4 @@ def get_yolo_model():
     conv_sbbox = separable_conv(conv, 256)
     pred_sbbox = conv_bn_relu(conv_sbbox, 3 * 25, kernel_size=1, activation=False, bn=False)
 
-    return keras.Model(backbone.input, [pred_large_box, pred_mbbox, pred_sbbox])
+    return keras.Model(backbone.input, [pred_sbbox, pred_mbbox, pred_large_box])
