@@ -38,12 +38,13 @@ def loss_per_scale(pred_raw, label, strides):
 
     conf_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5], pred_raw[..., 4:5]) + (
             1.0 - object_mask) * ignore_msk * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5],
-                                                                                              pred_raw[..., 4:5])
+                                                                                      pred_raw[..., 4:5])
     # batch_size,grid,grid,3,1
 
     # class prob loss
     class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:])
     # grid,grid,20
     loss = tf.concat([iou_loss, conf_loss, class_prob_loss], axis=-1) * label[..., -1:]
+    tf.print(loss.shape)
     loss = tf.reduce_mean(tf.reduce_sum(loss, axis=[1, 2, 3, 4]))
     return loss

@@ -20,8 +20,8 @@ manager = CheckpointManager(check_point, cfg.CHECKPOINT_PATH, 3)
 if (cfg.RESTORE_TRAINING):
     check_point.restore(tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH))
 
-for i in range(start.numpy(), cfg.EPOCHS):
-    print('epoch:', i)
+for i in tf.range(start.numpy(), cfg.EPOCHS):
+    tf.print('epoch:', i)
     for image, label_sbbox, label_mbbox, label_lbbox in train_data:
         lr = get_lr(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)
         optimizer.lr = lr
@@ -30,12 +30,15 @@ for i in range(start.numpy(), cfg.EPOCHS):
             loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
         grads = tape.gradient(loss_val, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
-        tf.summary.scalar('train_loss', loss_val, optimizer.iterations)
+        # tf.summary.scalar('train_loss', loss_val, optimizer.iterations)
+        if(optimizer.iterations%100==0):
+            tf.print(optimizer.iterations, 'train_loss', loss_val, 'lr:', lr)
     for image, label_sbbox, label_mbbox, label_lbbox in test_data:
         pred_sbbox, pred_mbbox, pred_lbbox = model(image)
         loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
         test_loss.assign_add(loss_val)
-    tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
-    tf.summary.scalar('lr', optimizer.lr, step=optimizer.iterations)
-    test_loss.assign(tf.constant(0, dtype=tf.float32))
+    tf.print(optimizer.iterations, "test loss:", loss_val / (test_data.get_size() / cfg.BATCH_SIZE))
+    # tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
+    # tf.summary.scalar('lr', optimizer.lr, step=optimizer.iterations)
+    # test_loss.assign(tf.constant(0, dtype=tf.float32))
     manager.save()
