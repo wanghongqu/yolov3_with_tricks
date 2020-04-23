@@ -70,6 +70,7 @@ class Data:
         if (self.batch_num >= self.total_batch):
             self.batch_num = 0
             np.random.shuffle(self.annotations)
+            raise StopIteration()
         return tf.convert_to_tensor(batch_image, dtype=tf.float32), tf.convert_to_tensor(batch_label_sbbox,
                                                                                          dtype=tf.float32), tf.convert_to_tensor(
             batch_label_mbbox, dtype=tf.float32), tf.convert_to_tensor(batch_label_lbbox, dtype=tf.float32)
