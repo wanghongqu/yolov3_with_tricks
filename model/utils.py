@@ -93,7 +93,7 @@ def calc_iou(pred, object_boxes):
 
     # object area
     obj_wh = object_boxes[..., 2:4] - object_boxes[..., :2]
-    obj_area = obj_wh[..., 0] * pred_wh[..., 0]  # shape:[N]
+    obj_area = obj_wh[..., 0] * obj_wh[..., 1]  # shape:[N]
 
     # intersect area
 
