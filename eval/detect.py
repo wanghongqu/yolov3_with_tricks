@@ -26,8 +26,7 @@ class YoloDetect:
         image = Image.open(annotation_line.split()[0])
         image = np.array(image)
         resized_image = resize_to_train_size(image.copy(), cfg.TEST_INPUT_SIZE, is_training=False) / 255.0
-        pred_sbbox, pred_mbbox, pred_lbbox = self.model(
-            resized_image(tf.convert_to_tensor(resized_image[np.newaxis, :, :, :]).astype(np.float32)))
+        pred_sbbox, pred_mbbox, pred_lbbox = self.model((resized_image[np.newaxis, :, :, :]).astype(np.float32))
         pred_sbbox = tf.reshape(decode(pred_sbbox, 8), shape=[-1, 25])
         pred_mbbox = tf.reshape(decode(pred_mbbox, 16), shape=[-1, 25])
         pred_lbbox = tf.reshape(decode(pred_lbbox, 32), shape=[-1, 25])
@@ -35,11 +34,15 @@ class YoloDetect:
 
         pred_class_prob = pred_boxes_info[..., 4:5] * pred_boxes_info[..., 5:]
         pred_msk = tf.reduce_max(pred_boxes_info[..., 4:5] * pred_boxes_info[..., 5:], axis=-1) > cfg.IGNORE_THRESH
-        pred_boxes_coor = tf.boolean_mask(pred_boxes_info[..., :4], tf.cast(pred_msk, dtype=tf.bool)).numpy()
 
+        pred_boxes_coor = tf.boolean_mask(pred_boxes_info[..., :4], tf.cast(pred_msk, dtype=tf.bool)).numpy()
+        if not (pred_boxes_coor.shape[0]):
+            return
         pred_msk = np.logical_or(pred_boxes_coor[:, 0] >= pred_boxes_coor[:, 2],
                                  pred_boxes_coor[:, 1] >= pred_boxes_coor[:, 3])
-        pred_class_prob = pred_class_prob[pred_msk]
+
+        # print(pred_class_prob.shape)
+        pred_class_prob = (pred_class_prob[pred_msk]).numpy()
         pred_boxes_coor = pred_boxes_coor[pred_msk]
         pred_boxes_coor[:, 0:2] = np.maximum([0.0, 0.0], pred_boxes_coor[:, 0:2])
         pred_boxes_coor[:, 2:4] = np.minimum([cfg.TEST_INPUT_SIZE - 1, cfg.TEST_INPUT_SIZE - 1],
@@ -47,5 +50,6 @@ class YoloDetect:
 
         clazz = np.argmax(pred_class_prob, axis=-1)
         prob = pred_class_prob[np.arange(len(pred_class_prob)), clazz]
+
         pred = np.concatenate([pred_boxes_coor, prob[:, np.newaxis], clazz[:, np.newaxis]], axis=-1)
         draw_image_with_boxes(image, nms(pred), 'test.png')

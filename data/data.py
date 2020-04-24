@@ -29,6 +29,7 @@ class Data:
     def __next__(self):
         if self.is_training:
             train_input_size = random.choice(cfg.TRAIN_INPUT_SIZE)
+
             train_output_size = [train_input_size // v for v in cfg.STRIDES]
         else:
             train_input_size = cfg.TEST_INPUT_SIZE
@@ -46,13 +47,15 @@ class Data:
 
         for i, line in enumerate(batch_annotations):
             image, boxes = parse_annotation(line, self.is_training)
-            image, boxes = resize_to_train_size(image, boxes, train_input_size)
+            # print('for:',train_input_size)
+            image, boxes = resize_to_train_size(image, train_input_size, boxes)
 
             # mix_up
             if random.random() < 0.5:
                 mix_idx = random.randint(0, len(self.annotations) - 1)
                 mix_img, mix_boxes = parse_annotation(self.annotations[mix_idx])
-                mix_img, mix_boxes = resize_to_train_size(mix_img, mix_boxes, train_input_size)
+                mix_img, mix_boxes = resize_to_train_size(mix_img, train_input_size, mix_boxes)
+
                 lam = np.random.beta(1.5, 1.5)
                 image = lam * image + (1 - lam) * mix_img
                 boxes = np.concatenate([boxes, lam * np.ones((len(boxes), 1), dtype=np.float32)], axis=-1)
@@ -62,7 +65,7 @@ class Data:
             else:
                 boxes = np.concatenate([boxes, np.ones((len(boxes), 1), dtype=np.float32)], axis=-1)
             s_label, m_label, l_label = self.creat_label(boxes, train_output_size)
-            batch_image[i, :, :, :] = image.astype(np.float32)/255.0
+            batch_image[i, :, :, :] = image.astype(np.float32) / 255.0
             batch_label_sbbox[i, :, :, :, :] = s_label
             batch_label_mbbox[i, :, :, :, :] = m_label
             batch_label_lbbox[i, :, :, :, :] = l_label
@@ -71,7 +74,8 @@ class Data:
             self.batch_num = 0
             np.random.shuffle(self.annotations)
             raise StopIteration()
-        return tf.convert_to_tensor(batch_image, dtype=tf.float32), tf.convert_to_tensor(batch_label_sbbox,dtype=tf.float32), tf.convert_to_tensor(
+        return tf.convert_to_tensor(batch_image, dtype=tf.float32), tf.convert_to_tensor(batch_label_sbbox,
+                                                                                         dtype=tf.float32), tf.convert_to_tensor(
             batch_label_mbbox, dtype=tf.float32), tf.convert_to_tensor(batch_label_lbbox, dtype=tf.float32)
 
     def __iter__(self):

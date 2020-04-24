@@ -104,7 +104,7 @@ def random_shift(image, boxes):
     return np.array(new_image), boxes
 
 
-def resize_to_train_size(image, train_input_size, boxes, is_training=True):
+def resize_to_train_size(image, train_input_size, boxes=None, is_training=True):
     ih, iw = image.shape[:2]
     scale = min(train_input_size / ih, train_input_size / iw)
     new_h, new_w = int(scale * ih), int(scale * iw)

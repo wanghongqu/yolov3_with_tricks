@@ -36,13 +36,17 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
         # tf.summary.scalar('train_loss', loss_val, optimizer.iterations)
         if (optimizer.iterations % 50 == 0):
             tf.print(optimizer.iterations, 'train_loss', loss_val, 'lr:', lr)
+    detect.detect_image(
+        r'/content/yolov3_with_tricks/data/VOC/2007_trainval/JPEGImages/000007.jpg 141,50,500,330,6')
     for image, label_sbbox, label_mbbox, label_lbbox in test_data:
         pred_sbbox, pred_mbbox, pred_lbbox = model(image)
         loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
         test_loss.append(loss_val.numpy())
+    start.assign(tf.constant(i, dtype=tf.int32))
+    manager.save()
     print("test loss:", np.mean(test_loss))
-    detect.detect_image(r'/content/yolov3_with_tricks/data/VOC/2007_trainval/JPEGImages/000007.jpg 141,50,500,330,6')
+    test_loss = []
+
     # tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
     # tf.summary.scalar('lr', optimizer.lr, step=optimizer.iterations)
     # test_loss.assign(tf.constant(0, dtype=tf.float32))
-    manager.save()
