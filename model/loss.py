@@ -37,7 +37,7 @@ def loss_per_scale(pred_raw, label, strides):
             object_boxes = tf.zeros(shape=[1, 4], dtype=tf.float32)
         iou = calc_iou(pred[i][..., :4], object_boxes)  # grid,grid,3,N
         max_iou = tf.reduce_max(iou, axis=-1, keepdims=True)  # grid,grid,3,1
-        ignore_msk = ignore_msk.write(i, tf.cast(max_iou < cfg.IGNORE_THRESH, dtype=tf.float32))
+        ignore_msk = ignore_msk.write(i, tf.cast(max_iou < cfg.IOU_LOSS_THRESH, dtype=tf.float32))
     ignore_msk = ignore_msk.stack()
     conf_focal = focal(object_mask, pred[..., 4:5])
 
