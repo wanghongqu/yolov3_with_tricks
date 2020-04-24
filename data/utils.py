@@ -104,7 +104,7 @@ def random_shift(image, boxes):
     return np.array(new_image), boxes
 
 
-def resize_to_train_size(image, boxes, train_input_size):
+def resize_to_train_size(image, train_input_size, boxes, is_training=True):
     ih, iw = image.shape[:2]
     scale = min(train_input_size / ih, train_input_size / iw)
     new_h, new_w = int(scale * ih), int(scale * iw)
@@ -113,10 +113,12 @@ def resize_to_train_size(image, boxes, train_input_size):
     new_image = Image.new('RGB', [train_input_size, train_input_size], (128, 128, 128))
     dx, dy = int((train_input_size - new_w) / 2.0), int((train_input_size - new_h) / 2.0)
     new_image.paste(image, (dx, dy))
-
-    boxes[..., [0, 2]] = scale * boxes[..., [0, 2]] + dx
-    boxes[..., [1, 3]] = scale * boxes[..., [1, 3]] + dy
-    return np.array(new_image), boxes
+    if (is_training):
+        boxes[..., [0, 2]] = scale * boxes[..., [0, 2]] + dx
+        boxes[..., [1, 3]] = scale * boxes[..., [1, 3]] + dy
+        return np.array(new_image), boxes
+    else:
+        return np.array(new_image)
 
 
 def draw_image_with_boxes(image, boxes, name):
