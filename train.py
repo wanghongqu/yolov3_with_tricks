@@ -18,7 +18,7 @@ writer.set_as_default()
 test_loss = []
 start = tf.Variable(initial_value=0)
 check_point = Checkpoint(m=model, optim=optimizer, s=start)
-manager = CheckpointManager(check_point, cfg.CHECKPOINT_PATH, 3)
+manager = CheckpointManager(check_point, cfg.CHECKPOINT_PATH, 1)
 detect = YoloDetect(model=model)
 if (cfg.RESTORE_TRAINING and tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH)):
     check_point.restore(tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH))
