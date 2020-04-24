@@ -23,7 +23,7 @@ class YoloDetect:
         input_data = []
         for image in images:
             input_data.append(resize_to_train_size(image.copy(), cfg.TEST_INPUT_SIZE, is_training=False))
-            input_data = np.concatenate(input_data, axis=-1)
+        input_data = np.concatenate(input_data, axis=0)
         pred_sbbox, pred_mbbox, pred_lbbox = self.model(input_data)
         pred_sbbox = tf.reshape(decode(pred_sbbox, 8), shape=[-1, 25])
         pred_mbbox = tf.reshape(decode(pred_mbbox, 16), shape=[-1, 25])
@@ -45,5 +45,4 @@ class YoloDetect:
         clazz = np.argmax(pred_class_prob, axis=-1)
         prob = pred_class_prob[clazz]
         pred = np.concatenate([pred_boxes_coor, prob[:, np.newaxis], clazz[:, np.newaxis]], axis=-1)
-        return nms(pred)
-
+        return image, nms(pred)
