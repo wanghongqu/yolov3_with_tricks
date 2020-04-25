@@ -33,7 +33,9 @@ class YoloDetect:
         pred_boxes_info = tf.concat([pred_sbbox, pred_mbbox, pred_lbbox], axis=0)
 
         pred_class_prob = pred_boxes_info[..., 4:5] * pred_boxes_info[..., 5:]
+        assert pred_class_prob.shape == (pred_boxes_info.shape[0], 20)
         pred_msk = tf.reduce_max(pred_boxes_info[..., 4:5] * pred_boxes_info[..., 5:], axis=-1) > cfg.IGNORE_THRESH
+        assert pred_msk.shape == (pred_boxes_info.shape[0], 1)
         pred_class_prob = pred_class_prob[pred_msk]
         print("after masked:", pred_class_prob.shape[0])
         pred_boxes_coor = (pred_boxes_info[..., :4][pred_msk]).numpy()

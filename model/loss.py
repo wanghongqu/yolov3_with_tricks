@@ -1,5 +1,5 @@
 import config as cfg
-from model.utils import decode, cal_giou, calc_iou
+from model.utils import decode, cal_giou, calc_iou, cal_diou
 import tensorflow as tf
 
 
@@ -23,12 +23,13 @@ def loss_per_scale(pred_raw, label, strides):
     input_size = pred.shape[1] * strides
     grid_size = pred.shape[1]
     # 计算xy loss
-    giou = cal_giou(pred[..., :4], label[..., :4])
+    # giou = cal_giou(pred[..., :4], label[..., :4])
+    giou = cal_diou(pred[..., :4], label[..., :4])
     object_mask = label[..., 4:5]
     wh = (label[..., 2:4] - label[..., :2])
     scale = 2.0 - 1.0 * wh[..., 0:1] * wh[..., 1:2] / float(input_size) / float(input_size)  # grid,grid,3,1
     iou_loss = scale * object_mask * (1.0 - giou)  # batch_size,grid,grid,3,1
-    assert iou_loss.shape==(pred.shape[0],grid_size,grid_size,3,1)
+    assert iou_loss.shape == (pred.shape[0], grid_size, grid_size, 3, 1)
 
     # 计算confidence loss
     ignore_msk = tf.TensorArray(dtype=tf.float32, size=1, dynamic_size=True)
@@ -42,19 +43,13 @@ def loss_per_scale(pred_raw, label, strides):
 
         ignore_msk = ignore_msk.write(i, tf.cast(max_iou < cfg.IOU_LOSS_THRESH, dtype=tf.float32))
     ignore_msk = ignore_msk.stack()
-    # conf_focal = focal(object_mask, pred[..., 4:5])
 
     conf_loss = (
             object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5], pred_raw[..., 4:5]) + (
             1.0 - object_mask) * ignore_msk * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5],
                                                                                       pred_raw[..., 4:5]))
-    # batch_size,grid,grid,3,1
 
-    # class prob loss
     class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:])
-    # grid,grid,20
     loss = tf.concat([iou_loss, conf_loss, class_prob_loss], axis=-1) * label[..., -1:]
-    # tf.print("iou_loss:", tf.reduce_sum(iou_loss), "conf_loss:", tf.reduce_sum(conf_loss), "class_prob_loss:",
-    #  tf.reduce_sum(class_prob_loss))
     loss = tf.reduce_mean(tf.reduce_sum(loss, axis=[1, 2, 3, 4]))
     return loss

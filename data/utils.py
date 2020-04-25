@@ -128,3 +128,4 @@ def draw_image_with_boxes(image, boxes, name):
     for box in boxes:
         draw.rectangle(box[:4].astype(np.int32).tolist(), width=2, outline='yellow')
     image.save(name)
+
