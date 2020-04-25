@@ -83,6 +83,7 @@ def random_crop(image, boxes):
 def random_shift(image, boxes):
     ih, iw = image.shape[:2]
     dxdy_min = np.min(boxes[..., :2], axis=-2)
+
     dxdy_max = image.shape[:2][::-1] - np.max(boxes[..., 2:4], axis=-2) - 1
     new_image = Image.new('RGB', (iw, ih), color=(128, 128, 128))
     random_dx = int(np.random.uniform(-dxdy_min[0], dxdy_max[0]))

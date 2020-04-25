@@ -8,11 +8,11 @@ from model.utils import conv_bn_relu, separable_conv, decode
 
 def get_backbone():
     base_model = keras.applications.mobilenet_v2.MobileNetV2(alpha=1.0, include_top=False,
-                                                             weights='imagenet',
+                                                             weights='imagenet',input_shape=(416,416,3),
                                                              input_tensor=None, pooling=None, classes=1000)
     return keras.Model(base_model.input, [
         base_model.get_layer('block_6_expand').input,
-        base_model.get_layer('block_10_expand').input,
+        base_model.get_layer('block_11_expand').input,
         base_model.get_layer('out_relu').output,
     ])
 
@@ -62,3 +62,12 @@ def get_yolo_model():
     pred_sbbox = conv_bn_relu(conv_sbbox, 3 * 25, kernel_size=1, activation=False, bn=False)
 
     return keras.Model(backbone.input, [pred_sbbox, pred_mbbox, pred_large_box])
+
+#
+# backbone = get_backbone()
+# for layer in backbone.layers:
+#     print(layer.output_shape,'           ',layer.name)
+# featuremap_small, featuremap_medium, featuremap_large = backbone.output
+# print(featuremap_small.shape)
+# print(featuremap_medium.shape)
+# print(featuremap_large.shape)

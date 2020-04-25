@@ -21,9 +21,9 @@ class Data:
         self.annotations = np.array(self.annotations)
         self.total_batch = int(len(self.annotations) / float(cfg.BATCH_SIZE) + 0.5)
         self.is_training = is_training
-        print('total  data: ', len(self.annotations))
-        print('batch_size:', cfg.BATCH_SIZE)
-        if is_training:
+        if self.is_training:
+            print('total training  data: ', len(self.annotations))
+            print('trainging batch_size:', cfg.BATCH_SIZE)
             print('total training epoch:', cfg.EPOCHS)
 
     def __next__(self):
@@ -67,6 +67,7 @@ class Data:
             s_label, m_label, l_label = self.creat_label(boxes, train_output_size)
             batch_image[i, :, :, :] = image.astype(np.float32) / 255.0
             batch_label_sbbox[i, :, :, :, :] = s_label
+            assert batch_label_sbbox.shape==s_label.shape
             batch_label_mbbox[i, :, :, :, :] = m_label
             batch_label_lbbox[i, :, :, :, :] = l_label
         self.batch_num += 1
@@ -114,7 +115,7 @@ class Data:
             grid_total = ground_truth_count[branch][y_, x_]
             if (grid_total >= 2.8):
                 continue;
-            ground_truth_count[branch][y_, x_] += 1
             label[branch][y_, x_, int(grid_total), :] = np.concatenate([xy, [1], one_hot, [w]], axis=-1)
+            ground_truth_count[branch][y_, x_] += 1
         s_label, m_label, l_label = label
         return s_label, m_label, l_label

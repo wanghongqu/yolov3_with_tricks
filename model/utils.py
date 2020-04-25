@@ -38,7 +38,7 @@ def decode(pred, strides):
     pred_dx2dy2 = tf.exp(pred_raw_dx2dy2)
     pred_raw_conf = pred[..., 4:5]
     pred_conf = tf.sigmoid(pred_raw_conf)
-    pred_raw_class_prob = pred[...,5:]
+    pred_raw_class_prob = pred[..., 5:]
     pred_class_prob = tf.sigmoid(pred_raw_class_prob)
 
     y = tf.tile(tf.range(grid_size)[:, tf.newaxis], [1, grid_size])[..., tf.newaxis]
@@ -49,7 +49,7 @@ def decode(pred, strides):
     pred_xminymin = strides * (grid + 0.5 - pred_dx1dy1)
     pred_xmaxymax = strides * (grid + 0.5 + pred_dx2dy2)
 
-    ret = tf.concat([pred_xminymin,pred_xmaxymax,pred_conf,pred_class_prob],axis=-1)
+    ret = tf.concat([pred_xminymin, pred_xmaxymax, pred_conf, pred_class_prob], axis=-1)
     return ret
 
 
@@ -60,6 +60,33 @@ def get_lr(step, step_per_epoch):
         return step / warmup_steps * cfg.LEARN_RATE_INIT
     return cfg.LEARN_RATE_END + 0.5 * (cfg.LEARN_RATE_INIT - cfg.LEARN_RATE_END) * (
             1 + np.math.cos((step - warmup_steps) / (train_steps - warmup_steps) * np.pi))
+
+
+def cal_diou(pred, label):
+    # 计算 pred面积
+    pred_wh = pred[..., 2:4] - pred[..., :2]
+    pred_area = pred_wh[..., 0:1] * pred_wh[..., 1:2]  # batch_size,grid,grid,3,1
+    # 计算 label面积
+    label_wh = label[..., 2:4] - label[..., 0:2]  # batch_size,grid,grid,3,2
+    label_area = label_wh[..., 0:1] * label_wh[..., 1:2]  # batch_size,grid,grid,3,1
+    # 计算交集
+    intersect_minxy = tf.maximum(pred[..., :2], label[..., :2])
+    intersect_maxxy = tf.minimum(pred[..., 2:4], label[..., 2:4])
+    intersect_wh = tf.maximum(intersect_maxxy - intersect_minxy, 0.0)
+    intersect_area = intersect_wh[..., 0:1] * intersect_wh[..., 1:2]
+    iou = intersect_area / (label_area + pred_area - intersect_area)  # batch_size,grid,grid,3,1
+
+    outer_minxy = tf.minimum(pred[..., :2], label[..., :2])
+    outer_maxxy = tf.maximum(pred[..., 2:4], label[..., 2:4])
+    outer_wh = tf.maximum(outer_maxxy - outer_minxy, 0.0)
+    outer_eye_dis = tf.sqrt(tf.pow(outer_wh[..., 0:1], 2) + tf.pow(outer_wh[..., 1:2], 2))
+
+    label_center = (label[..., 2:4] + label[..., 0:2]) / 2
+    pred_center = (pred[..., 2:4] + pred[..., 0:2]) / 2
+    inter_wh = pred_center - label_center
+    inter_eye_dis = tf.sqrt(tf.pow(inter_wh[..., 0:1], 2) + tf.pow(inter_wh[..., 1:2], 2))
+
+    return iou - inter_eye_dis / outer_eye_dis
 
 
 def cal_giou(pred, label):
@@ -74,11 +101,11 @@ def cal_giou(pred, label):
     intersect_maxxy = tf.minimum(pred[..., 2:4], label[..., 2:4])
     intersect_wh = tf.maximum(intersect_maxxy - intersect_minxy, 0.0)
     intersect_area = intersect_wh[..., 0:1] * intersect_wh[..., 1:2]
-    iou = intersect_area / (label_area + pred_area - intersect_area) # batch_size,grid,grid,3,1
+    iou = intersect_area / (label_area + pred_area - intersect_area)  # batch_size,grid,grid,3,1
     # 外部闭集
     outer_minxy = tf.minimum(pred[..., :2], label[..., :2])
     outer_maxxy = tf.maximum(pred[..., 2:4], label[..., 2:4])
-    outer_wh = tf.maximum(outer_maxxy - outer_minxy,0.0)
+    outer_wh = tf.maximum(outer_maxxy - outer_minxy, 0.0)
     out_area = outer_wh[..., 0:1] * outer_wh[..., 1:2]
 
     giou = 1.0 * (iou - (out_area - label_area - pred_area + intersect_area) / out_area)  # grid,grid,3,1

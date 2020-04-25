@@ -35,8 +35,8 @@ class YoloDetect:
         pred_class_prob = pred_boxes_info[..., 4:5] * pred_boxes_info[..., 5:]
         pred_msk = tf.reduce_max(pred_boxes_info[..., 4:5] * pred_boxes_info[..., 5:], axis=-1) > cfg.IGNORE_THRESH
         pred_class_prob = pred_class_prob[pred_msk]
-        print("after masked:",pred_class_prob.shape[0])
-        pred_boxes_coor = (pred_boxes_info[..., :4][tf.cast(pred_msk, dtype=tf.bool)]).numpy()
+        print("after masked:", pred_class_prob.shape[0])
+        pred_boxes_coor = (pred_boxes_info[..., :4][pred_msk]).numpy()
         if not (pred_boxes_coor.shape[0]):
             return
         pred_msk = np.logical_or(pred_boxes_coor[:, 0] >= pred_boxes_coor[:, 2],
@@ -46,7 +46,8 @@ class YoloDetect:
         pred_boxes_coor[:, 0:2] = np.maximum([0.0, 0.0], pred_boxes_coor[:, 0:2])
         pred_boxes_coor[:, 2:4] = np.minimum([cfg.TEST_INPUT_SIZE - 1, cfg.TEST_INPUT_SIZE - 1],
                                              pred_boxes_coor[:, 2:4])
-
+        if (pred_boxes_coor.shape[0]):
+            print(pred_boxes_coor.shape[0])
         clazz = np.argmax(pred_class_prob, axis=-1)
         prob = pred_class_prob[np.arange(len(pred_class_prob)), clazz]
 
