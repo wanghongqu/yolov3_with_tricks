@@ -129,3 +129,15 @@ def draw_image_with_boxes(image, boxes, name):
         draw.rectangle(box[:4].astype(np.int32).tolist(), width=2, outline='yellow')
     image.save(name)
 
+
+if __name__ == '__main__':
+    line = r"C:\Users\LenovoPC\PycharmProjects\yolov3_with_tricks\data\000203.jpg 52,166,167,332,8"
+    path = line.split()[0]
+    boxes =np.array([[int(v) for v in part.split(',')] for part in  line.split()[1:]])
+    image = np.array(Image.open(path))
+    image,boxes = random_shift(image,boxes)
+    image,boxes = random_crop(image,boxes)
+    image,boxes = random_left_right_flip(image,boxes)
+    image,boxes = resize_to_train_size(image,544,boxes=boxes)
+    draw_image_with_boxes(image,boxes,'aa.png')
+    pass
