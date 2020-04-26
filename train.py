@@ -31,7 +31,7 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
     for image, label_sbbox, label_mbbox, label_lbbox in train_data:
         lr = get_lr(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)
         optimizer.lr = lr
-        if i >= cfg.WARM_UP_EPOCHS:
+        if i >= 40:
             for layer in model.layers:
                 trainable = True
         with tf.GradientTape() as tape:
