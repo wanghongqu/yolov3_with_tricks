@@ -42,8 +42,8 @@ class YoloDetect:
         pred_boxes_coor = (pred_boxes_info[..., :4][pred_msk]).numpy()
         if not (pred_boxes_coor.shape[0]):
             return
-        pred_msk = np.logical_and(pred_boxes_coor[:, 0] <= pred_boxes_coor[:, 2],
-                                 pred_boxes_coor[:, 1] <= pred_boxes_coor[:, 3])
+        pred_msk = np.logical_and(pred_boxes_coor[:, 0] < pred_boxes_coor[:, 2],
+                                 pred_boxes_coor[:, 1] < pred_boxes_coor[:, 3])
         pred_class_prob = (pred_class_prob[pred_msk]).numpy()
         pred_boxes_coor = pred_boxes_coor[pred_msk]
         pred_boxes_coor[:, 0:2] = np.maximum([0.0, 0.0], pred_boxes_coor[:, 0:2])
