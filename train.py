@@ -31,9 +31,10 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
     for image, label_sbbox, label_mbbox, label_lbbox in train_data:
         lr = get_lr(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)
         optimizer.lr = lr
-        if i >= 40:
+        if i >= 20:
             for layer in model.layers:
                 trainable = True
+            print('unfrezze all layers to training')
         with tf.GradientTape() as tape:
             pred_sbbox, pred_mbbox, pred_lbbox = model(tf.convert_to_tensor(image, dtype=tf.float32))
             loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
