@@ -25,16 +25,15 @@ detect = YoloDetect(model=model)
 if (cfg.RESTORE_TRAINING and tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH)):
     print('loaded the previous checkpoints form CHECKPOINT PATH!')
     check_point.restore(tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH))
-
+if start.numpy() >= 20:
+    for layer in model.layers:
+        trainable = True
+    print('unfrezze all layers to training')
 for i in tf.range(start.numpy(), cfg.EPOCHS):
     tf.print('epoch:', i)
     for image, label_sbbox, label_mbbox, label_lbbox in train_data:
         lr = get_lr(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)
         optimizer.lr = lr
-        if i >= 20:
-            for layer in model.layers:
-                trainable = True
-            print('unfrezze all layers to training')
         with tf.GradientTape() as tape:
             pred_sbbox, pred_mbbox, pred_lbbox = model(tf.convert_to_tensor(image, dtype=tf.float32))
             loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
@@ -54,7 +53,7 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
     print("test loss:", np.mean(test_loss))
     test_loss = []
     os.system('rm -rf checkpoints.zip')
-    os.system('!zip -r checkpoints.zip /content/yolov3_with_tricks/logs/checkpoints/')
+    os.system('zip -r checkpoints.zip /content/yolov3_with_tricks/logs/checkpoints/')
 
     # tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
     # tf.summary.scalar('lr', optimizer.lr, step=optimizer.iterations)
