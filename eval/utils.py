@@ -39,7 +39,6 @@ def nms(bboxes, score_threshold=cfg.IGNORE_THRESH, iou_threshold=cfg.IOU_THRESH,
     """
     classes_in_img = list(set(bboxes[:, 5]))
     best_bboxes = []
-
     for cls in classes_in_img:
         cls_mask = (bboxes[:, 5] == cls)
         cls_bboxes = bboxes[cls_mask]

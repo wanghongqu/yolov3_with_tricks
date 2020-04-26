@@ -44,18 +44,20 @@ def parse_annotation(line, is_training=True):
     boxes = np.array([[float(v) for v in part.split(',')] for part in line.split()[1:]])
     image = np.array(Image.open(path))
     if is_training:
-        image, boxes = random_left_right_flip(image, boxes)
-        image, boxes = random_crop(image, boxes)
-        image, boxes = random_shift(image, boxes)
+        if random.random() < 0.5:
+            image, boxes = random_left_right_flip(image, boxes)
+        if random.random() < 0.5:
+            image, boxes = random_crop(image, boxes)
+        if random.random() < 0.5:
+            image, boxes = random_shift(image, boxes)
     return image, boxes
 
 
 def random_left_right_flip(image, boxes):
-    if random.random() < 0.5:
-        image[...] = image[:, ::-1, :]
-        ih, iw = image.shape[0], image.shape[1]
-        boxes[:, [0, 2]] = boxes[:, [2, 0]]
-        boxes[:, [0, 2]] = iw - 1 - boxes[:, [0, 2]]
+    image[...] = image[:, ::-1, :]
+    ih, iw = image.shape[0], image.shape[1]
+    boxes[:, [0, 2]] = boxes[:, [2, 0]]
+    boxes[:, [0, 2]] = iw - 1 - boxes[:, [0, 2]]
     return image, boxes
 
 
@@ -133,11 +135,11 @@ def draw_image_with_boxes(image, boxes, name):
 if __name__ == '__main__':
     line = r"C:\Users\LenovoPC\PycharmProjects\yolov3_with_tricks\data\000203.jpg 52,166,167,332,8"
     path = line.split()[0]
-    boxes =np.array([[int(v) for v in part.split(',')] for part in  line.split()[1:]])
+    boxes = np.array([[int(v) for v in part.split(',')] for part in line.split()[1:]])
     image = np.array(Image.open(path))
-    image,boxes = random_shift(image,boxes)
-    image,boxes = random_crop(image,boxes)
-    image,boxes = random_left_right_flip(image,boxes)
-    image,boxes = resize_to_train_size(image,544,boxes=boxes)
-    draw_image_with_boxes(image,boxes,'aa.png')
+    image, boxes = random_shift(image, boxes)
+    image, boxes = random_crop(image, boxes)
+    image, boxes = random_left_right_flip(image, boxes)
+    image, boxes = resize_to_train_size(image, 544, boxes=boxes)
+    draw_image_with_boxes(image, boxes, 'aa.png')
     pass
