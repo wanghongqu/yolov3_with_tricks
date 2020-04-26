@@ -8,8 +8,7 @@ from model.utils import conv_bn_relu, separable_conv, decode
 
 def get_backbone():
     base_model = keras.applications.mobilenet_v2.MobileNetV2(alpha=1.0, include_top=False,
-                                                             weights='imagenet', input_shape=(416, 416, 3),
-                                                             input_tensor=None, pooling=None, classes=1000)
+                                                             weights='imagenet', input_tensor=None, pooling=None, classes=1000)
     return keras.Model(base_model.input, [
         base_model.get_layer('block_6_expand').input,
         base_model.get_layer('block_11_expand').input,

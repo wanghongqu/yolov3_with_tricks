@@ -1,3 +1,5 @@
+import os
+
 import config as cfg
 from model.utils import decode, cal_giou, calc_iou, cal_diou
 import tensorflow as tf
@@ -48,6 +50,7 @@ def loss_per_scale(pred_raw, label, strides):
             object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5], pred_raw[..., 4:5]) + (
             1.0 - object_mask) * ignore_msk * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5],
                                                                                       pred_raw[..., 4:5]))
+
 
     class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:])
     loss = tf.concat([iou_loss, conf_loss, class_prob_loss], axis=-1) * label[..., -1:]

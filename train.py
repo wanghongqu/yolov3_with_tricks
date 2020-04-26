@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 import config as cfg
@@ -21,6 +23,7 @@ check_point = Checkpoint(m=model, optim=optimizer, s=start)
 manager = CheckpointManager(check_point, cfg.CHECKPOINT_PATH, 1)
 detect = YoloDetect(model=model)
 if (cfg.RESTORE_TRAINING and tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH)):
+    print('loaded the previous checkpoints form CHECKPOINT PATH!')
     check_point.restore(tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH))
 
 for i in tf.range(start.numpy(), cfg.EPOCHS):
