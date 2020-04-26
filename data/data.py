@@ -67,7 +67,6 @@ class Data:
             s_label, m_label, l_label = self.creat_label(boxes, train_output_size)
             batch_image[i, :, :, :] = image.astype(np.float32) / 255.0
             batch_label_sbbox[i, :, :, :, :] = s_label
-            assert batch_label_sbbox.shape==s_label.shape
             batch_label_mbbox[i, :, :, :, :] = m_label
             batch_label_lbbox[i, :, :, :, :] = l_label
         self.batch_num += 1
