@@ -22,7 +22,7 @@ IGNORE_THRESH = 0.01
 IOU_THRESH = 0.45
 
 # name and path
-CHECKPOINT_PATH = '/content/drive/My Drive/Colab Notebooks/yolov3_with_tricks/checkpoints/'
+CHECKPOINT_PATH = './logs/checkpoints/'
 LOG_PATH = './logs/logs/'
 PROJECT_PATH = os.getcwd()
 DATA_PATH = os.path.join(os.getcwd(), 'data/VOC/')
