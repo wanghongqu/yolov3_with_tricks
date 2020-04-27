@@ -52,9 +52,8 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
     manager.save()
     print("test loss:", np.mean(test_loss))
     test_loss = []
-    os.system('rm -rf checkpoints.zip')
-    os.system('zip -r checkpoints.zip /content/yolov3_with_tricks/logs/checkpoints/')
-
+    os.system('zip -r checkpoints'+str(i.numpy())+'.zip /content/yolov3_with_tricks/logs/checkpoints/')
+    os.system('mv checkpoints*.zip /content/drive/My\ Drive/Colab\ Notebooks/yolo_tricks/')
     # tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
     # tf.summary.scalar('lr', optimizer.lr, step=optimizer.iterations)
     # test_loss.assign(tf.constant(0, dtype=tf.float32))
