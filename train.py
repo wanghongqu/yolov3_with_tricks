@@ -47,7 +47,7 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
             loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
             scaled_loss = optimizer.get_scaled_loss(loss_val)
         scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
-        grads = tape.gradient(scaled_gradients, model.trainable_variables)
+        grads = optimizer.get_unscaled_gradients(scaled_gradients)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
     # tf.summary.scalar('train_loss', loss_val, optimizer.iterations)
     if (optimizer.iterations % 50 == 0 and optimizer.iterations):
