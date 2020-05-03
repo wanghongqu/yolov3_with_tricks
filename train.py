@@ -49,21 +49,20 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
         scaled_gradients = tape.gradient(scaled_loss, model.trainable_variables)
         grads = optimizer.get_unscaled_gradients(scaled_gradients)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
-    # tf.summary.scalar('train_loss', loss_val, optimizer.iterations)
-    if (optimizer.iterations % 50 == 0 and optimizer.iterations):
-        tf.print(optimizer.iterations, 'train_loss', loss_val, 'lr:', optimizer.lr)
-detect.detect_image(
-    r'/content/yolov3_with_tricks/data/VOC/2007_trainval/JPEGImages/000007.jpg 141,50,500,330,6')
-for image, label_sbbox, label_mbbox, label_lbbox in test_data:
-    pred_sbbox, pred_mbbox, pred_lbbox = model(image)
-    loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
-    test_loss.append(loss_val.numpy())
-start.assign(tf.constant(i, dtype=tf.int32))
-manager.save()
-print("test loss:", np.mean(test_loss))
-test_loss = []
-os.system('zip -r checkpoints' + str(i.numpy()) + '.zip /content/yolov3_with_tricks/logs/checkpoints/')
-os.system('mv checkpoints*.zip /content/drive/My\ Drive/Colab\ Notebooks/yolo_tricks/')
-# tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
-# tf.summary.scalar('lr', optimizer.lr, step=optimizer.iterations)
-# test_loss.assign(tf.constant(0, dtype=tf.float32))
+        # tf.summary.scalar('train_loss', loss_val, optimizer.iterations)
+        if (optimizer.iterations % 50 == 0 and optimizer.iterations):
+            tf.print(optimizer.iterations, 'train_loss', loss_val, 'lr:', optimizer.lr)
+    detect.detect_image(r'/content/yolov3_with_tricks/data/VOC/2007_trainval/JPEGImages/000007.jpg 141,50,500,330,6')
+    for image, label_sbbox, label_mbbox, label_lbbox in test_data:
+        pred_sbbox, pred_mbbox, pred_lbbox = model(image)
+        loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
+        test_loss.append(loss_val.numpy())
+    start.assign(tf.constant(i, dtype=tf.int32))
+    manager.save()
+    print("test loss:", np.mean(test_loss))
+    test_loss = []
+    os.system('zip -r checkpoints' + str(i.numpy()) + '.zip /content/yolov3_with_tricks/logs/checkpoints/')
+    os.system('mv checkpoints*.zip /content/drive/My\ Drive/Colab\ Notebooks/yolo_tricks/')
+    # tf.summary.scalar('test_loss', loss_val / test_data.get_size(), optimizer.iterations)
+    # tf.summary.scalar('lr', optimizer.lr, step=optimizer.iterations)
+    # test_loss.assign(tf.constant(0, dtype=tf.float32))
