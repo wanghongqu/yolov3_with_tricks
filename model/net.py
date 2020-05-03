@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.keras import layers
 import tensorflow.keras as keras
 from tensorflow.keras.layers import *
 from tensorflow.keras.utils import plot_model
@@ -8,7 +9,8 @@ from model.utils import conv_bn_relu, separable_conv, decode
 
 def get_backbone():
     base_model = keras.applications.mobilenet_v2.MobileNetV2(alpha=1.0, include_top=False,
-                                                             weights='imagenet', input_tensor=None, pooling=None, classes=1000)
+                                                             weights='imagenet', input_tensor=None, pooling=None,
+                                                             classes=1000)
     return keras.Model(base_model.input, [
         base_model.get_layer('block_6_expand').input,
         base_model.get_layer('block_11_expand').input,
@@ -61,6 +63,10 @@ def get_yolo_model():
     # detection branch of samll objects
     conv_sbbox = separable_conv(conv, 256)
     pred_sbbox = conv_bn_relu(conv_sbbox, 3 * 25, kernel_size=1, activation=False, bn=False)
+
+    pred_sbbox = layers.Activation('linear', dtype='float32')(pred_sbbox)
+    pred_mbbox = layers.Activation('linear', dtype='float32')(pred_mbbox)
+    pred_large_box = layers.Activation('linear', dtype='float32')(pred_large_box)
 
     return keras.Model(backbone.input, [pred_sbbox, pred_mbbox, pred_large_box])
 

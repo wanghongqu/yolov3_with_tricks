@@ -127,6 +127,7 @@ def resize_to_train_size(image, train_input_size, boxes=None, is_training=True):
 def draw_image_with_boxes(image, boxes, name):
     image = Image.fromarray(image)
     draw = ImageDraw.Draw(image)
+
     for box in boxes:
         draw.rectangle(box[:4].astype(np.int32).tolist(), width=2, outline='yellow')
     image.save(name)

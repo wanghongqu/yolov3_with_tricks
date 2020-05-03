@@ -14,8 +14,8 @@ class YoloDetect:
         if model == None:
             self.model = get_yolo_model()
             checkpoint = tf.train.Checkpoint(m=self.model)
-            # checkpoint.restore(tf.train.latest_checkpoint(r"C:\Users\LenovoPC\Desktop\checkpoints"))
-            checkpoint.restore(tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH))
+            checkpoint.restore(tf.train.latest_checkpoint(r"C:\Users\LenovoPC\Desktop\checkpoints"))
+            # checkpoint.restore(tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH))
         else:
             self.model = model
 

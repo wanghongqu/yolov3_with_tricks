@@ -18,8 +18,8 @@ RESTORE_TRAINING = True
 
 # test
 TEST_INPUT_SIZE = 544
-IGNORE_THRESH = 0.02
-IOU_THRESH = 0.45
+IGNORE_THRESH = 0.1
+IOU_THRESH = 0.3
 
 # name and path
 CHECKPOINT_PATH = './logs/checkpoints/'
