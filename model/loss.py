@@ -30,8 +30,7 @@ def yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, labe
     class_prob_val += class_prob_loss_
 
     logger = logging.getLogger('loss')
-    logger.info(' total loss:' + str(loss_val.numpy()), ' iou_loss:', str(iou_loss_val), ' conf_loss:', str(conf_loss_val),
-                ' class_prob_loss:', str(class_prob_val))
+    logger.info('total loss:' + str(loss_val.numpy())+ ' iou_loss:'+str(iou_loss_val)+' conf_loss:'+ str(conf_loss_val)+' class_prob_loss:'+ str(class_prob_val))
     return loss_val
 
 
