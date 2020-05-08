@@ -16,13 +16,17 @@ def separable_conv(input, output_c, strides=1, kernel_size=3):
 
 
 def conv_bn_relu(x, filters, kernel_size=3, strides=1, padding='same', bn=True, activation=True):
-    x = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
+    tmp = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
                kernel_initializer=tf.random_normal_initializer(stddev=0.01))(x)
     if bn:
-        x = BatchNormalization(beta_initializer=tf.zeros_initializer, gamma_initializer=tf.ones_initializer)(x)
+        tmp = BatchNormalization(beta_initializer=tf.zeros_initializer, gamma_initializer=tf.ones_initializer)(tmp)
     if activation:
-        x = tf.nn.relu6(x)
-    return x
+        tmp = tf.nn.relu6(tmp)
+    return tmp
+
+
+def conv_bias(input, inp, oup, kernel, stride, padding):
+    return Conv2D(inp, oup, kernel, stride, padding, bias=True)(input)
 
 
 def decode(pred, strides):

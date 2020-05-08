@@ -50,4 +50,3 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
     test_loss = []
     os.system('zip -r checkpoints' + str(i.numpy()) + '.zip /content/yolov3_with_tricks/logs/checkpoints/')
     os.system('mv checkpoints*.zip /content/drive/My\ Drive/Colab\ Notebooks/yolo_tricks/')
-    
