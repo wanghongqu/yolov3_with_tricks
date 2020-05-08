@@ -12,7 +12,7 @@ from model.utils import get_lr, multi_step_decay
 from tensorflow.train import Checkpoint, CheckpointManager
 
 logging.basicConfig(filename='log.txt', level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                    format='%(asctime)s - %(message)s')
 model = get_yolo_model()
 optimizer = tf.optimizers.Adam()
 train_data = Data()
