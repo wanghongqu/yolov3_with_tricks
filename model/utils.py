@@ -62,9 +62,9 @@ def multi_step_decay(step, step_per_epoch):
     if (step < warmup_steps):
         return step / warmup_steps * cfg.LEARN_RATE_INIT
     elif step >= step_per_epoch * cfg.MILESTONES[0] and step <= step_per_epoch * cfg.MILESTONES[1]:
-        return cfg.LEARN_RATE_INIT / 0.1
+        return cfg.LEARN_RATE_INIT * 0.1
     else:
-        return cfg.LEARN_RATE_INIT / 0.001
+        return cfg.LEARN_RATE_INIT * 0.001
 
 
 def get_lr(step, step_per_epoch):
