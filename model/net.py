@@ -51,7 +51,7 @@ def asff(level, x_level_0, x_level_1, x_level_2, rfb=False, vis=False):
 
     levels_weight_v = Concatenate()([level_0_weight_v, level_1_weight_v, level_2_weight_v])
     levels_weight_v = conv_bn_relu(levels_weight_v, 3)
-    levels_weight_v = tf.nn.softmax(levels_weight_v, dim=-1)
+    levels_weight_v = tf.nn.softmax(levels_weight_v, axis=-1)
 
     fused_out_reduced = x_level_0_resized * levels_weight_v[..., 0:1] + \
                         x_level_1_resized * levels_weight_v[..., 1:2] + \

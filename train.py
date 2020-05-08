@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-
+import logging
 import config as cfg
 import tensorflow as tf
 from data.data import Data
@@ -11,6 +11,8 @@ from model.net import get_yolo_model
 from model.utils import get_lr, multi_step_decay
 from tensorflow.train import Checkpoint, CheckpointManager
 
+logging.basicConfig(filename='log.txt', level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 model = get_yolo_model()
 optimizer = tf.optimizers.Adam()
 train_data = Data()
@@ -40,13 +42,13 @@ for i in tf.range(start.numpy(), cfg.EPOCHS):
             tf.print(optimizer.iterations, 'train_loss', loss_val, 'lr:', lr)
     # detect.detect_image(
     #     r'/content/yolov3_with_tricks/data/VOC/2007_trainval/JPEGImages/000007.jpg 141,50,500,330,6')
-    for image, label_sbbox, label_mbbox, label_lbbox in test_data:
-        pred_sbbox, pred_mbbox, pred_lbbox = model(image)
-        loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
-        test_loss.append(loss_val.numpy())
+    # for image, label_sbbox, label_mbbox, label_lbbox in test_data:
+    #     pred_sbbox, pred_mbbox, pred_lbbox = model(image)
+    #     loss_val = yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox)
+    #     test_loss.append(loss_val.numpy())
+    # print("test loss:", np.mean(test_loss))
     start.assign(tf.constant(i, dtype=tf.int32))
     manager.save()
-    print("test loss:", np.mean(test_loss))
     test_loss = []
     os.system('zip -r checkpoints' + str(i.numpy()) + '.zip /content/yolov3_with_tricks/logs/checkpoints/')
     os.system('mv checkpoints*.zip /content/drive/My\ Drive/Colab\ Notebooks/yolo_tricks/')

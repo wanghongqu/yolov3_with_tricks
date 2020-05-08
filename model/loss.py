@@ -1,5 +1,5 @@
 import os
-
+import logging
 import config as cfg
 from model.utils import decode, cal_giou, calc_iou, cal_diou
 import tensorflow as tf
@@ -7,9 +7,31 @@ import tensorflow as tf
 
 def yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, label_lbbox):
     loss_val = 0
-    loss_val += loss_per_scale(pred_sbbox, label_sbbox, 8)
-    loss_val += loss_per_scale(pred_mbbox, label_mbbox, 16)
-    loss_val += loss_per_scale(pred_lbbox, label_lbbox, 32)
+    iou_loss_val = 0
+    conf_loss_val = 0
+    class_prob_val = 0
+
+    loss_, iou_loss_val_, conf_loss_val_, class_prob_loss_ = loss_per_scale(pred_sbbox, label_sbbox, 8)
+    loss_val += loss_
+    iou_loss_val += iou_loss_val_
+    conf_loss_val += conf_loss_val_
+    class_prob_val += class_prob_loss_
+
+    loss_, iou_loss_val_, conf_loss_val_, class_prob_loss_ = loss_per_scale(pred_mbbox, label_mbbox, 16)
+    loss_val += loss_
+    iou_loss_val += iou_loss_val_
+    conf_loss_val += conf_loss_val_
+    class_prob_val += class_prob_loss_
+
+    loss_, iou_loss_val_, conf_loss_val_, class_prob_loss_ = loss_per_scale(pred_lbbox, label_lbbox, 32)
+    loss_val += loss_
+    iou_loss_val += iou_loss_val_
+    conf_loss_val += conf_loss_val_
+    class_prob_val += class_prob_loss_
+
+    logger = logging.getLogger('loss')
+    logger.info('total loss:' + str(loss_val), ' iou_loss:', str(iou_loss_val), ' conf_loss:', str(conf_loss_val),
+                ' class_prob_loss:', str(class_prob_val))
     return loss_val
 
 
@@ -45,14 +67,16 @@ def loss_per_scale(pred_raw, label, strides):
 
         ignore_msk = ignore_msk.write(i, tf.cast(max_iou < cfg.IOU_LOSS_THRESH, dtype=tf.float32))
     ignore_msk = ignore_msk.stack()
-
     conf_loss = (
             object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5], pred_raw[..., 4:5]) + (
             1.0 - object_mask) * ignore_msk * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 4:5],
                                                                                       pred_raw[..., 4:5]))
-
-
     class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:])
     loss = tf.concat([iou_loss, conf_loss, class_prob_loss], axis=-1) * label[..., -1:]
+
+    iou_loss_val = tf.reduce_sum(iou_loss) / float(cfg.BATCH_SIZE)
+    conf_loss_val = tf.reduce_sum(conf_loss) / float(cfg.BATCH_SIZE)
+    class_prob_loss = tf.reduce_sum(class_prob_loss) / float(cfg.BATCH_SIZE)
+
     loss = tf.reduce_mean(tf.reduce_sum(loss, axis=[1, 2, 3, 4]))
-    return loss
+    return loss, iou_loss_val.numpy(), conf_loss_val.numpy(), class_prob_loss.numpy()
