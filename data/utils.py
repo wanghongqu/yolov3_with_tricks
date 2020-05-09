@@ -3,7 +3,7 @@ import numpy as np
 import config as cfg
 import numpy as np
 import xml.etree.cElementTree as ET
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageFont
 import os
 from PIL import ImageDraw
 
@@ -127,8 +127,11 @@ def resize_to_train_size(image, train_input_size, boxes=None, is_training=True):
 def draw_image_with_boxes(image, boxes, name):
     image = Image.fromarray(image)
     draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype("arial.ttf", 30)
+
     for box in boxes:
         draw.rectangle(box[:4].astype(np.int32).tolist(), width=2, outline='yellow')
+        draw.text(box[:2].astype(np.int32).tolist(),cfg.CLASSES[box[-1]],fill='yellow',font=font)
     image.save(name)
 
 
@@ -141,5 +144,5 @@ if __name__ == '__main__':
     image, boxes = random_crop(image, boxes)
     image, boxes = random_left_right_flip(image, boxes)
     image, boxes = resize_to_train_size(image, 544, boxes=boxes)
-    draw_image_with_boxes(image, boxes, 'aa.png')
+    draw_image_with_boxes(image, boxes, '123.png')
     pass
