@@ -128,11 +128,15 @@ def draw_image_with_boxes(image, boxes, name):
     image = Image.fromarray(image)
     draw = ImageDraw.Draw(image)
     font = ImageFont.truetype("arial.ttf", 30)
+    # font = ImageFont.truetype('LiberationSerif-Regular.ttf', 35)
+    print(draw.textsize())
 
     for box in boxes:
         draw.rectangle(box[:4].astype(np.int32).tolist(), width=2, outline='yellow')
-        draw.text(box[:2].astype(np.int32).tolist(),cfg.CLASSES[box[-1]],fill='yellow',font=font)
+        draw.text(box[:2].astype(np.int32).tolist(),cfg.CLASSES[box[-1].astype(np.int32)],fill='yellow',font=font)
     image.save(name)
+
+
 
 
 if __name__ == '__main__':
