@@ -17,7 +17,7 @@ def separable_conv(input, output_c, strides=1, kernel_size=3):
 
 def conv_bn_relu(x, filters, kernel_size=3, strides=1, padding='same', bn=True, activation=True):
     tmp = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding,
-               kernel_initializer=tf.random_normal_initializer(stddev=0.01))(x)
+                 kernel_initializer=tf.random_normal_initializer(stddev=0.01))(x)
     if bn:
         tmp = BatchNormalization(beta_initializer=tf.zeros_initializer, gamma_initializer=tf.ones_initializer)(tmp)
     if activation:
@@ -63,8 +63,10 @@ def multi_step_decay(step, step_per_epoch):
         return step / warmup_steps * cfg.LEARN_RATE_INIT
     elif step >= step_per_epoch * cfg.MILESTONES[0] and step <= step_per_epoch * cfg.MILESTONES[1]:
         return cfg.LEARN_RATE_INIT * 0.1
-    else:
+    elif step > step_per_epoch * cfg.MILESTONES[1]:
         return cfg.LEARN_RATE_INIT * 0.001
+    else:
+        return cfg.LEARN_RATE_INIT
 
 
 def get_lr(step, step_per_epoch):

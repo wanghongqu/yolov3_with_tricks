@@ -30,7 +30,8 @@ def yolo_loss(pred_sbbox, pred_mbbox, pred_lbbox, label_sbbox, label_mbbox, labe
     class_prob_val += class_prob_loss_
 
     logger = logging.getLogger('loss')
-    logger.info('total loss:' + str(loss_val.numpy())+ ' iou_loss:'+str(iou_loss_val)+' conf_loss:'+ str(conf_loss_val)+' class_prob_loss:'+ str(class_prob_val))
+    logger.info('total loss:' + str(loss_val.numpy()) + ' iou_loss:' + str(iou_loss_val) + ' conf_loss:' + str(
+        conf_loss_val) + ' class_prob_loss:' + str(class_prob_val))
     return loss_val
 
 
@@ -73,9 +74,9 @@ def loss_per_scale(pred_raw, label, strides):
     class_prob_loss = object_mask * tf.nn.sigmoid_cross_entropy_with_logits(label[..., 5:-1], pred_raw[..., 5:])
     loss = tf.concat([iou_loss, conf_loss, class_prob_loss], axis=-1) * label[..., -1:]
 
-    iou_loss_val = tf.reduce_sum(iou_loss) / float(cfg.BATCH_SIZE)
-    conf_loss_val = tf.reduce_sum(conf_loss) / float(cfg.BATCH_SIZE)
-    class_prob_loss = tf.reduce_sum(class_prob_loss) / float(cfg.BATCH_SIZE)
+    iou_loss_val = tf.reduce_sum(iou_loss * label[..., -1:]) / float(cfg.BATCH_SIZE)
+    conf_loss_val = tf.reduce_sum(conf_loss * label[..., -1:]) / float(cfg.BATCH_SIZE)
+    class_prob_loss = tf.reduce_sum(class_prob_loss * label[..., -1:]) / float(cfg.BATCH_SIZE)
 
     loss = tf.reduce_mean(tf.reduce_sum(loss, axis=[1, 2, 3, 4]))
     return loss, iou_loss_val.numpy(), conf_loss_val.numpy(), class_prob_loss.numpy()
