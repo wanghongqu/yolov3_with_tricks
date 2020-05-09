@@ -129,7 +129,7 @@ def draw_image_with_boxes(image, boxes, name):
     draw = ImageDraw.Draw(image)
     font = ImageFont.truetype("arial.ttf", 30)
     # font = ImageFont.truetype('LiberationSerif-Regular.ttf', 35)
-    print(draw.textsize())
+    # print(draw.textsize())
 
     for box in boxes:
         draw.rectangle(box[:4].astype(np.int32).tolist(), width=2, outline='yellow')
