@@ -30,7 +30,8 @@ if (cfg.RESTORE_TRAINING and tf.train.latest_checkpoint(cfg.CHECKPOINT_PATH)):
 for i in tf.range(start.numpy(), cfg.EPOCHS):
     tf.print('epoch:', i)
     for image, label_sbbox, label_mbbox, label_lbbox in train_data:
-        lr = multi_step_decay(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)
+        # lr = multi_step_decay(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)
+        lr = get_lr(optimizer.iterations, train_data.get_size() // cfg.BATCH_SIZE)
         optimizer.lr = lr
         with tf.GradientTape() as tape:
             pred_sbbox, pred_mbbox, pred_lbbox = model(tf.convert_to_tensor(image, dtype=tf.float32))

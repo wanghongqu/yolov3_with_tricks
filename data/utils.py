@@ -127,8 +127,8 @@ def resize_to_train_size(image, train_input_size, boxes=None, is_training=True):
 def draw_image_with_boxes(image, boxes, name):
     image = Image.fromarray(image)
     draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype("arial.ttf", 30)
-    # font = ImageFont.truetype('LiberationSerif-Regular.ttf', 35)
+    # font = ImageFont.truetype("arial.ttf", 30)
+    font = ImageFont.truetype('LiberationSerif-Regular.ttf', 30)
     # print(draw.textsize())
 
     for box in boxes:

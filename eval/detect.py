@@ -20,6 +20,7 @@ class YoloDetect:
             self.model = model
 
     def detect_image(self, annotation_line):
+        tf.keras.backend.set_learning_phase(0)
         '''
         :param data:[1,cfg.TEST_INPUT_SIZE,cfg.TEST_INPUT_SIZE,3]
         :return:
@@ -43,7 +44,7 @@ class YoloDetect:
         if not (pred_boxes_coor.shape[0]):
             return
         pred_msk = np.logical_and(pred_boxes_coor[:, 0] < pred_boxes_coor[:, 2],
-                                 pred_boxes_coor[:, 1] < pred_boxes_coor[:, 3])
+                                  pred_boxes_coor[:, 1] < pred_boxes_coor[:, 3])
         pred_class_prob = (pred_class_prob[pred_msk]).numpy()
         pred_boxes_coor = pred_boxes_coor[pred_msk]
         pred_boxes_coor[:, 0:2] = np.maximum([0.0, 0.0], pred_boxes_coor[:, 0:2])
@@ -58,3 +59,4 @@ class YoloDetect:
 
         draw_image_with_boxes(resize_to_train_size(image.copy(), cfg.TEST_INPUT_SIZE, is_training=False), nms(pred),
                               'test.png')
+        tf.keras.backend.set_learning_phase(1)
